@@ -47,7 +47,7 @@ class Display:
 		td = datetime.datetime.now()-datetime.datetime.fromtimestamp(startTime)
 		self.stdscr.addstr(self.titleBlock+3,0, "Running since {0} ({1})      ".format(
 													datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S'), 
-															str(td)))
+													str(td)))
 	def displaySubmit(self, total, fileNumber, currFile):
 		if self.stdscr == None:
 			return

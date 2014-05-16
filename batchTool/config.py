@@ -17,9 +17,47 @@ class BatchToolExceptions:
 		'''Some options are not valid or missing.'''
 		pass
 
+
+class BatchJob:
+	'''
+	Class representing a single job
+	'''
+	
+	inputFile = None
+	queue = None
+	index = None
+	jobID = None
+	status = None
+	attempts = None
+	script = None
+	
+	def __init__(self, inputFile, index):
+		self.inputFile = inputFile
+		self.index = index
+		self.queue = None
+		self.jobID = None
+		self.status = None
+		self.attempts = None
+		self.script = None
+	
+	def update(self, dico):
+		if "inputFile" in dico:
+			self.inputFile = dico["inputFile"]
+		if "queue" in dico:
+			self.queue = dico["queue"]
+		if "index" in dico:
+			self.index = dico["index"]
+		if "jobID" in dico:
+			self.jobID = dico["jobID"]
+		if "status" in dico:
+			self.status = dico["status"]
+		if "attempts" in dico:
+			self.attempts = dico["attempts"]
+		if "script" in dico:
+			self.script = dico["script"]
+
 class ConfigBatch:
 	_templateDico = {"jobIndex":0, "fileName":"", "outputDir":"", "outputFile":""}
-	_jobDico = {"inputFile":None, "queue":None, "index":None, "jobID":None, "status":None, "attempts":None}
 
 	_reprTemplate = """
 <
@@ -77,6 +115,7 @@ fileList:
 				raise BatchToolExceptions.BadOption("Unable to test outputs: outputDir or outputFile not specified")
 		
 		self._readInputList(test)
+		self._generateScript()
 	
 	def load(self, jsonFile):
 		with open(jsonFile) as f:
@@ -85,12 +124,6 @@ fileList:
 	def save(self, fileName):
 		with open(fileName, "wb") as f:
 			json.dump(self.__dict__, f)
-
-	def _newJob(self, inputFile, index):
-		dico = dict(self._jobDico)
-		dico["inputFile"] = inputFile
-		dico["index"] = index
-		return dico
 
 	def _buildSearchMap(self, index, fileName):
 		dico = dict(self._templateDico)
@@ -110,7 +143,7 @@ fileList:
 			for i,line in enumerate(f):
 				if i>=self.startIndex:
 					if(self._testOutputFile(i)):
-						self.jobsList.append(self._newJob(line.strip('\n'), i))
+						self.jobsList.append(BatchJob(line.strip('\n'), i))
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
 		
@@ -167,16 +200,15 @@ fileList:
 		
 		return sReturn
 	
-	def generateScript(self, indexList = []):
+	def _generateScript(self):
 		sReturn = "#Pre \n%s \n#Command \n%s \n#Post \n%s"
-		if len(indexList)==0:
-			indexList = range(0,self.jobNumber)
+		indexList = range(0,self.jobNumber)
 		for i in indexList:
-			dico = self._buildSearchMap(i, self.jobsList[i]["inputFile"])
+			dico = self._buildSearchMap(i, self.jobsList[i].inputFile)
 			pre = self._readAndReplace(self.preExecute, dico)
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
-			yield (self.jobsList[i],sReturn % (pre, command, post))
+			self.jobsList[i].script = sReturn % (pre, command, post)
 	
 	def __str__(self):
 		files = "" 
@@ -186,7 +218,7 @@ fileList:
 	
 	def parseFailReason(self, job):
 		#if false
-		#job["attempts"] = -1
+		#job["attempts"] = -2
 		return True
 	
 	def updateJob(self, jobID, dico):
@@ -196,8 +228,8 @@ fileList:
 			jobNumber = self.jobCorrespondance[jobID]
 			job = self.jobsList[jobNumber]
 			#test state change
-			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job["jobID"])
-			if job["status"]!=dico["status"]:
+			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
+			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output
 					if os.path.exists(lsfPath):
@@ -206,8 +238,9 @@ fileList:
 					#clean output
 					if os.path.exists(lsfPath):
 						shutil.rmtree(lsfPath)
-					if job["attempts"]!=-1 and job["attempts"]<self.maxAttempts and self.parseFailReason(job):
+					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
 						reSubmit = True
+						job.attemps = -1
 						index = jobNumber
 						del self.jobCorrespondance[jobID]
 			
@@ -231,21 +264,21 @@ fileList:
 		finished = 0
 		
 		for job in self.jobsList:
-			if not job["status"]:
+			if not job.status:
 				unknown += 1
-			elif job["status"]=="PEND":
+			elif job.status=="PEND":
 				pending["value"] += 1
-				pending["attempts"][job["attempts"]] += 1
-			elif job["status"]=="RUN":
+				pending["attempts"][job.attempts] += 1
+			elif job.status=="RUN":
 				running["value"] += 1
-				running["attempts"][job["attempts"]] += 1
-			elif job["status"]=="EXIT":
+				running["attempts"][job.attempts] += 1
+			elif job.status=="EXIT":
 				failed["value"] += 1
-				if job["attempts"]!= -1:
-					failed["attempts"][job["attempts"]] += 1
+				if job.attempts >= 0:
+					failed["attempts"][job.attempts] += 1
 				else:
 					failed["permanent"] += 1
-			elif job["status"]=="DONE":
+			elif job.status=="DONE":
 				finished += 1
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
 	
