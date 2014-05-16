@@ -17,7 +17,7 @@ It defines classes_and_methods
 @deffield    updated: Updated
 '''
 
-from . import Display, Monitor
+from batchTool import Display, Monitor
 from argparse import ArgumentParser
 import curses
 import sys
@@ -36,19 +36,19 @@ def mainInit(scr=None):
 	screen = Display()
 	screen.setScreen(scr)
 	screen.displayHeader(mon.config.getHeaders())
-	while True:
-		mainLoop(screen)
-
-		
-
-def mainLoop(screen):
-	screen.displayTime(mon.config.startTime)
 	try:
-		screen.displaySummary(mon.config.getStatusStats())
-		time.sleep(2)
+		while True:
+			mainLoop(screen)
 	except KeyboardInterrupt:
 		mon.saveState()
 		return
+		
+
+def mainLoop(screen):
+	mon.monitor()
+	screen.displayTime(mon.config.startTime)
+	screen.displaySummary(mon.config.getStatusStats())
+	time.sleep(2)
 
 def argParser():
 	global mon

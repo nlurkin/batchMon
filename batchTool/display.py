@@ -16,7 +16,7 @@ class Display:
 	debugBlock = 20
 
 
-	def __init__(self, scr):
+	def __init__(self):
 		'''
 		Constructor
 		'''
@@ -69,7 +69,7 @@ class Display:
 		self.stdscr.addstr(self.summaryBlock,100,"Unknown status {0}".format(stats["unknown"]))
 		
 		i=0
-		self.wipeAttemptsBlock(self)
+		self.wipeAttemptsBlock()
 		for aNumber,[pend,run,fail] in enumerate(zip(stats["pending"]["attempts"], stats["running"]["attempts"], stats["failed"]["attempts"])):
 			if aNumber==0 or i>= 4:
 				continue
