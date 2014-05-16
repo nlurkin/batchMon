@@ -8,7 +8,6 @@ import json
 import os
 import shutil
 import time
-from bzrlib.util._bencode_py import encode_dict
 
 class BatchToolExceptions:
 	class BadCardFileException(Exception):
@@ -42,7 +41,7 @@ class BatchJob:
 		self.queue = None
 		self.jobID = None
 		self.status = None
-		self.attempts = -1
+		self.attempts = -2
 		self.script = None
 	
 	def update(self, dico):
@@ -228,7 +227,7 @@ fileList:
 		#job["attempts"] = -2
 		return True
 	
-	def updateJob(self, jobID, dico):
+	def updateJob(self, jobID, dico, keep):
 		reSubmit = False
 		index = -1
 		if jobID in self.jobCorrespondance:
@@ -239,15 +238,14 @@ fileList:
 			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output
-					if os.path.exists(lsfPath):
+					if os.path.exists(lsfPath) and not keep:
 						shutil.rmtree(lsfPath)
 				if dico["status"]=="EXIT":
-					#clean output
-					if os.path.exists(lsfPath):
-						shutil.rmtree(lsfPath)
 					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
+						#clean output
+						if os.path.exists(lsfPath) and not keep:
+							shutil.rmtree(lsfPath)
 						reSubmit = True
-						job.attemps = -1
 						index = jobNumber
 						del self.jobCorrespondance[jobID]
 			
@@ -296,6 +294,14 @@ fileList:
 	
 	def resetFailed(self):
 		for job in self.jobsList:
-			if job.attempts==-2 or job.attempts==self.maxAttempts:
+			if job.attempts==-2 or job.attempts==self.maxAttempts and job.status=="EXIT":
 				job.attempts=-1
-			
+	
+	def enableNew(self):
+		for job in self.jobsList:
+			if job.attempts==-2 and not job.status:
+				job.attempts=-1
+	
+	def getJobsNumberReady(self):
+		return len([0 for job in self.jobsList if job.attempts==-1])
+	
