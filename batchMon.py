@@ -18,7 +18,7 @@ It defines classes_and_methods
 '''
 
 from batchTool import Display, Monitor
-from argparse import ArgumentParser
+from batchTool.argparse import ArgumentParser
 import curses
 import sys
 import time
@@ -29,6 +29,7 @@ __date__ = '2014-05-15'
 __updated__ = '2014-05-15'
 
 mon = None
+__timeDelay__ = 2
 
 def mainInit(scr=None):
 	global mon
@@ -48,7 +49,19 @@ def mainLoop(screen):
 	mon.monitor()
 	screen.displayTime(mon.config.startTime)
 	screen.displaySummary(mon.config.getStatusStats())
-	time.sleep(2)
+	if mon.submitReady:
+		if len(mon.submitList)==0:
+			screen.resetSubmit(len(mon.config.jobsList))
+		else:
+			screen.resetSubmit(len(mon.submitList))
+		for job in mon.generateJobs():
+			mon.submit(job)
+			screen.displaySubmit(job.jobID, job.index)
+			#time.sleep(0.1)
+	k = screen.getch()
+	if k != -1:
+		if curses.unctrl(k) == "^R":
+			mon.reSubmitFailed()
 
 def argParser():
 	global mon

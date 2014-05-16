@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import time
+from bzrlib.util._bencode_py import encode_dict
 
 class BatchToolExceptions:
 	class BadCardFileException(Exception):
@@ -17,6 +18,10 @@ class BatchToolExceptions:
 		'''Some options are not valid or missing.'''
 		pass
 
+def encode_dict(obj):
+	if isinstance(obj, BatchJob):
+		return obj.__dict__
+	return obj
 
 class BatchJob:
 	'''
@@ -37,7 +42,7 @@ class BatchJob:
 		self.queue = None
 		self.jobID = None
 		self.status = None
-		self.attempts = None
+		self.attempts = -1
 		self.script = None
 	
 	def update(self, dico):
@@ -58,7 +63,7 @@ class BatchJob:
 
 class ConfigBatch:
 	_templateDico = {"jobIndex":0, "fileName":"", "outputDir":"", "outputFile":""}
-
+	
 	_reprTemplate = """
 <
 configCard instance at %s
@@ -75,7 +80,7 @@ fileList:
 %s
 > 
 """
-	
+	jobsList = []
 	def __init__(self):
 		self.startTime = time.time()
 		self.jobNumber = 0
@@ -87,8 +92,6 @@ fileList:
 		self.postExecute = ""
 		
 		self.cardFile = ""
-		
-		self.jobsList = []
 		
 		self.startIndex = 0
 		self.maxJobs = 0
@@ -119,11 +122,15 @@ fileList:
 	
 	def load(self, jsonFile):
 		with open(jsonFile) as f:
-			self.__dict__ = json.load(f)
+			[self.__dict__,jobsList] = json.load(f)
+			for job in jobsList:
+				j = BatchJob(None, None)
+				j.__dict__ = job 
+				self.jobsList.append(j)
 	
 	def save(self, fileName):
 		with open(fileName, "wb") as f:
-			json.dump(self.__dict__, f)
+			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
 
 	def _buildSearchMap(self, index, fileName):
 		dico = dict(self._templateDico)
@@ -268,15 +275,17 @@ fileList:
 				unknown += 1
 			elif job.status=="PEND":
 				pending["value"] += 1
-				pending["attempts"][job.attempts] += 1
+				if job.attempts >= 0:
+					pending["attempts"][job.attempts] += 1
 			elif job.status=="RUN":
 				running["value"] += 1
-				running["attempts"][job.attempts] += 1
+				if job.attempts >= 0:
+					running["attempts"][job.attempts] += 1
 			elif job.status=="EXIT":
 				failed["value"] += 1
 				if job.attempts >= 0:
 					failed["attempts"][job.attempts] += 1
-				else:
+				elif job.attempts == -2:
 					failed["permanent"] += 1
 			elif job.status=="DONE":
 				finished += 1
@@ -284,3 +293,9 @@ fileList:
 	
 	def getHeaders(self):
 		return {"jobNumber":self.jobNumber, "cardFile":self.cardFile, "maxAttempts":self.maxAttempts}
+	
+	def resetFailed(self):
+		for job in self.jobsList:
+			if job.attempts==-2 or job.attempts==self.maxAttempts:
+				job.attempts=-1
+			
