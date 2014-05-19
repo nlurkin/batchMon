@@ -40,6 +40,8 @@ def mainInit(scr=None):
 	except KeyboardInterrupt:
 		mon.saveState()
 		return
+	finally:
+		mon.saveState()
 		
 
 def mainLoop(screen):
