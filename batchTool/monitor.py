@@ -62,7 +62,7 @@ class Monitor:
 	
 	def monitor(self):
 		cmd = ["bjobs -a"]
-		subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+		subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		(monOutput, _) = subCmd.communicate()
 	
 		reSubmit = []

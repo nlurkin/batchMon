@@ -14,10 +14,10 @@ class Display:
 	menuBlock = 1
 	inputBlock = 2
 	headerBlock = 4
-	summaryBlock = 8
-	submitBlock = 16
+	summaryBlock = 9
+	submitBlock = 17
 
-	debugBlock = 25
+	debugBlock = 30
 
 	submitTotal = 0
 	submitCurrent = 0
@@ -69,19 +69,22 @@ class Display:
 		self.stdscr.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.stdscr.addstr(" CTRL-R: Reset failed jobs ",curses.color_pair(1))
 		self.stdscr.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.stdscr.addstr(" CTRL-C: Save and quit ",curses.color_pair(1))
+		self.stdscr.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.stdscr.chgat(curses.color_pair(1))
-		self.stdscr.addstr(self.headerBlock,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
+		self.stdscr.addstr(self.headerBlock,0, "Monitor {0} (saved in {0}.json) on queue {1}".format(headers["name"], headers["queue"]))
+		self.stdscr.addstr(self.headerBlock+1,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
 												headers["jobNumber"], headers["cardFile"], headers["maxAttempts"]))
 		self.stdscr.hline(self.summaryBlock-1, 0, '-', 130)
 		self.stdscr.hline(self.submitBlock-1, 0, '-', 130)
-		self.stdscr.addstr(self.submitBlock,50, "Job submitting status")
+		self.stdscr.addstr(self.submitBlock,50, "Job submission status")
 		self.repaint()
 	
 	def displayTime(self, startTime):
 		if self.stdscr == None:
 			return
 		td = datetime.datetime.now()-datetime.datetime.fromtimestamp(startTime)
-		self.stdscr.addstr(self.headerBlock+1,0, "Running since {0} ({1})      ".format(
+		self.stdscr.addstr(self.headerBlock+2,0, "Running since {0} ({1})      ".format(
 													datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S'), 
 													str(td)))
 	

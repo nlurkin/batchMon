@@ -294,7 +294,7 @@ fileList:
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
 	
 	def getHeaders(self):
-		return {"jobNumber":self.jobNumber, "cardFile":self.cardFile, "maxAttempts":self.maxAttempts}
+		return {"jobNumber":self.jobNumber, "cardFile":self.cardFile, "maxAttempts":self.maxAttempts, "name":self.name, "queue":self.queue}
 	
 	def resetFailed(self):
 		for job in self.jobsList:
