@@ -43,10 +43,11 @@ class Display:
 		
 	def setScreen(self, scr):
 		self.stdscr = scr
-		curses.curs_set(0)
-		curses.start_color()
-		curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
-		curses.halfdelay(self.currentDelay*10)
+		if self.stdscr != None:
+			curses.curs_set(0)
+			curses.start_color()
+			curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+			curses.halfdelay(self.currentDelay*10)
 	
 	def wipeAttemptsBlock(self):
 		for i in range(0,5):
@@ -89,6 +90,8 @@ class Display:
 													str(td)))
 	
 	def resetSubmit(self, total):
+		if self.stdscr == None:
+			return
 		self.stdscr.move(self.submitBlock+2,0)
 		self.stdscr.clrtoeol()
 		self.wipeSubmitBlock()
