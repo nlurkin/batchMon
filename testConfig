@@ -1,0 +1,15 @@
+executable = /afs/cern.ch/user/n/nlurkin/Compact/compact 
+listFile = /afs/cern.ch/user/n/nlurkin/Compact/lists/scmp.p5.pass2.list
+outputDir = /afs/cern.ch/user/n/nlurkin/batch/output_test
+maxJobs = 5
+outputFile = job_test$jobIndex.root
+maxAttempts=1
+
+optTemplate = $outputFile
+
+preExecute = export HOME=/afs/cern.ch/user/n/nlurkin
+	source ~/env.sh
+
+postExecute = ls
+	pwd
+	mv $outputFile $outputDir/job_data$jobIndex.root
