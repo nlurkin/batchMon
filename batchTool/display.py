@@ -123,11 +123,11 @@ class Display:
 		if self.stdscr == None:
 			return
 		self.stdscr.addstr(self.summaryBlock,0,"Failed attempts")
-		self.stdscr.addstr(self.summaryBlock,20,"Pending jobs {0}".format(stats["pending"]["value"]))
-		self.stdscr.addstr(self.summaryBlock,40,"Running jobs {0}".format(stats["running"]["value"]))
-		self.stdscr.addstr(self.summaryBlock,60,"Failed jobs {0}".format(stats["failed"]["value"]))
-		self.stdscr.addstr(self.summaryBlock,80,"Finished jobs {0}".format(stats["finished"]))
-		self.stdscr.addstr(self.summaryBlock,100,"Unknown status {0}".format(stats["unknown"]))
+		self.stdscr.addstr(self.summaryBlock,20,"Pending jobs {0}   ".format(stats["pending"]["value"]))
+		self.stdscr.addstr(self.summaryBlock,40,"Running jobs {0}   ".format(stats["running"]["value"]))
+		self.stdscr.addstr(self.summaryBlock,60,"Failed jobs {0}   ".format(stats["failed"]["value"]))
+		self.stdscr.addstr(self.summaryBlock,80,"Finished jobs {0}   ".format(stats["finished"]))
+		self.stdscr.addstr(self.summaryBlock,100,"Unknown status {0}   ".format(stats["unknown"]))
 		
 		i=0
 		self.wipeAttemptsBlock()

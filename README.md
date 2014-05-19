@@ -64,3 +64,4 @@ Once in the curse interface:
 	o ctrl-G to generate and do the initial submission of the jobs
 	o ctrl-R to reset the failed jobs (permanent fail or maximum 
 			 attempts reached only)
+	o ctrl-T modify refresh rate (default=2s)
