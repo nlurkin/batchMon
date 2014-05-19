@@ -34,6 +34,8 @@ class Monitor:
 	
 	def submit(self, job):
 		cmd = ["bsub", "-q", self.config.queue]
+		if self.config.requirement:
+			cmd += ["-R", self.config.requirement]
 		subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
 		(subOutput, _) = subCmd.communicate(job.script)
 		

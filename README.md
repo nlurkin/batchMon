@@ -46,6 +46,7 @@ Others are not:
 	o outputDir : 	path to a directory where the monitor 
 						can find the output files
 	o outputFile : name of the ouput file (templated)
+	o requirement: specify requirement for bsub (-R flag)
 
 The fields marked as "templated" can use of the following 
 placeholder that will be replaced when submitting the job:
@@ -57,3 +58,9 @@ placeholder that will be replaced when submitting the job:
 	o $outputFile :will be replaced by the filename as defined
 						by the outputFile field
 
+Running
+-------
+Once in the curse interface:
+	o ctrl-G to generate and do the initial submission of the jobs
+	o ctrl-R to reset the failed jobs (permanent fail or maximum 
+			 attempts reached only)

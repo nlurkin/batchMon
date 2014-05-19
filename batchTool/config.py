@@ -103,6 +103,7 @@ fileList:
 		
 		self.name = ""
 		self.queue = ""
+		self.requirement = None
 
 	
 	def initCardFile(self, cardFile, name, queue, test=False):
@@ -191,6 +192,9 @@ fileList:
 
 		if cp.hasoption("outputFile"):
 			self.outputFile = cp.getoption("outputFile")
+
+		if cp.hasoption("requirement"):
+			self.requirement = cp.getoption("requirement")
 
 	def _readAndReplace(self, string, searchMap):
 		sReturn = ""
