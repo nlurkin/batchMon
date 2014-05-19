@@ -1,7 +1,7 @@
 '''
 Created on 16 May 2014
 
-@author: ncl
+@author: Nicolas Lurkin
 '''
 from . import ConfigBatch
 import re
