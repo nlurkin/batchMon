@@ -18,10 +18,12 @@ It defines classes_and_methods
 '''
 
 from batchTool import Display, Monitor
-from batchTool.argparse import ArgumentParser
+try:
+	from argparse import ArgumentParser
+except ImportError:
+	from batchTool.argparse import ArgumentParser
 import curses
 import sys
-import time
 
 __all__ = []
 __version__ = 0.1

@@ -45,7 +45,6 @@ class Monitor:
 			self.config.updateCorrespondance(job.jobID, job.index)
 	
 	def generateJobs(self):
-		sublist = []
 		if len(self.submitList)==0:
 			subList = [job for job in self.config.jobsList if job.attempts==-1]
 		else:
