@@ -16,7 +16,10 @@ class BatchToolExceptions:
 	class BadOption(Exception):
 		'''Some options are not valid or missing.'''
 		pass
-
+	class ErrorMessage(Exception):
+		'''Generic error message'''
+		pass
+	
 def encode_dict(obj):
 	if isinstance(obj, BatchJob):
 		return obj.__dict__
@@ -141,7 +144,8 @@ fileList:
 		return dico
 	
 	def _testOutputFile(self, index):
-		if os.path.exists(self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))):
+		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
+		if os.path.exists(path):
 			return False
 		return True
 		
@@ -149,7 +153,7 @@ fileList:
 		with open(self.listFile,'r') as f:
 			for i,line in enumerate(f):
 				if i>=self.startIndex:
-					if(self._testOutputFile(i)):
+					if (not test) or self._testOutputFile(i):
 						self.jobsList.append(BatchJob(line.strip('\n'), i))
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break

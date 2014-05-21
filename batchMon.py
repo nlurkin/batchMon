@@ -19,6 +19,7 @@ __date__ = '2014-05-15'
 __updated__ = '2014-05-19'
 
 from batchTool import Display, Monitor
+from batchTool.config import BatchToolExceptions as BatchToolException
 try:
 	from argparse import ArgumentParser, RawDescriptionHelpFormatter
 except ImportError:
@@ -36,12 +37,17 @@ def mainInit(scr=None):
 	screen.displayHeader(mon.config.getHeaders())
 	try:
 		while True:
-			mainLoop(screen)
+			try:
+				mainLoop(screen)
+			except BatchToolException.ErrorMessage as e:
+				screen.setError(e.strerror)
+
 	except KeyboardInterrupt:
 		mon.saveState()
 		return
-	finally:
+	except Exception:
 		mon.saveState()
+		raise
 		
 
 def mainLoop(screen):
@@ -58,12 +64,13 @@ def mainLoop(screen):
 			screen.displaySubmit(job.jobID, job.index)
 	k = screen.getch()
 	if k != -1:
-		if curses.unctrl(k) == "^R":
-			mon.reSubmitFailed()
-		if curses.unctrl(k) == "^T":
-			screen.setWaitingTime()
-		if curses.unctrl(k) == "^G":
-			mon.submitInit()
+		if screen.stdscr!=None:
+			if curses.unctrl(k) == "^R":
+				mon.reSubmitFailed()
+			if curses.unctrl(k) == "^T":
+				screen.setWaitingTime()
+			if curses.unctrl(k) == "^G":
+				mon.submitInit()
 
 
 def argParser():

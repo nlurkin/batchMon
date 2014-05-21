@@ -173,3 +173,7 @@ class Display:
 		curses.noecho()
 		self.stdscr.move(self.titleBlock+2, 0)
 		self.stdscr.clrtoeol()
+
+	def setError(self, strerr):
+		self.stdscr.addstr(self.debugBlock, 0, strerr)
+		self.repaint()
