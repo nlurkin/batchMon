@@ -66,6 +66,32 @@ class BatchJob:
 		if "script" in dico:
 			self.script = dico["script"]
 
+class finalBatchJob:
+	'''
+	Class representing the final job to execute
+	'''
+	script = None
+	jobID = None
+	queue = None
+	status = None
+	output = None
+	
+	def __init__(self, script):
+		self.script = script
+		self.jobID = None
+		self.status = None
+		self.queue = None
+	
+	def update(self, dico):
+		if "queue" in dico:
+			self.queue = dico["queue"]
+		if "jobID" in dico:
+			self.jobID = dico["jobID"]
+		if "status" in dico:
+			self.status = dico["status"]
+		if "script" in dico:
+			self.script = dico["script"]
+	
 class ConfigBatch:
 	_templateDico = {"jobIndex":0, "fileName":"", "outputDir":"", "outputFile":""}
 	
@@ -86,6 +112,7 @@ fileList:
 > 
 """
 	jobsList = []
+	
 	def __init__(self):
 		self.startTime = time.time()
 		self.jobNumber = 0
@@ -110,6 +137,9 @@ fileList:
 		self.name = ""
 		self.queue = ""
 		self.requirement = None
+		
+		self.finalJob = None
+		self.finalizeStage = -1
 
 	
 	def initCardFile(self, cardFile, name, queue, test=False):
@@ -122,7 +152,8 @@ fileList:
 		if test:
 			if not self.outputDir and not self.outputFile:
 				raise BatchToolExceptions.BadOption("Unable to test outputs: outputDir or outputFile not specified")
-		
+			self._checkOutputDir()
+			
 		self._readInputList(test)
 		self._generateScript()
 	
@@ -151,6 +182,10 @@ fileList:
 		if os.path.exists(path):
 			return False
 		return True
+	
+	def _checkOutputDir(self):
+		if not os.path.exists(self.outputDir):
+			os.mkdir(self.outputDir)
 		
 	def _readInputList(self, test):
 		with open(self.listFile,'r') as f:
@@ -204,6 +239,9 @@ fileList:
 
 		if cp.hasoption("requirement"):
 			self.requirement = cp.getoption("requirement")
+		
+		if cp.hasoption("finalScript"):
+			self.finalJob = finalBatchJob(cp.getoption("finalScript"))
 
 
 	def _readAndReplace(self, string, searchMap):
@@ -301,6 +339,10 @@ fileList:
 					failed["permanent"] += 1
 			elif job.status=="DONE":
 				finished += 1
+		
+		if finished==self.jobNumber and (unknown==0 and pending==0 and running==0 and failed==0):
+			self.finalizeStage = 0
+			
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
 	
 	def getHeaders(self):
@@ -320,3 +362,28 @@ fileList:
 	def getJobsNumberReady(self):
 		return len([0 for job in self.jobsList if job.attempts==-1])
 	
+	def updateFinalJob(self, dico):
+		if "status" in dico:
+			if self.finalJob.status!=dico["status"]:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(self.finalJob.jobID)
+				if dico["status"]=="DONE":
+					#get output, save it and clean
+					if os.path.exists(lsfPath):
+						#read
+						with open("%s/STDOUT" % (lsfPath), 'r') as f:
+							self.finalJob.output = f.read()
+						
+						#clean
+						shutil.rmtree(lsfPath)
+						self.finalizeStage = 2
+				if dico["status"]=="EXIT":
+					#miserably failed: do something about it
+					self.finalizeStage = -2
+		
+		#do the update
+		self.finalJob.update(dico)
+		if self.finalizeStage == 0:
+			self.finalizeStage = 1
+	
+	def finalizeFinished(self):
+		return self.finalizeStage==2 or self.finalizeStage==-2

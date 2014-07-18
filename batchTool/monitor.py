@@ -62,6 +62,12 @@ class Monitor:
 		self.submitReady = True
 	
 	def monitor(self):
+		if not self.checkFinalize():
+			self.monitorNormal()
+		else:
+			self.monitorFinal()
+	
+	def monitorNormal(self):
 		cmd = ["bjobs -a"]
 		subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		(monOutput, _) = subCmd.communicate()
@@ -78,10 +84,34 @@ class Monitor:
 			self.submitReady = True
 			self.submitList += reSubmit
 	
+	def monitorFinal(self):
+		cmd = ["bjobs -a"]
+		subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+		(monOutput, _) = subCmd.communicate()
+	
+		for line in monOutput.splitlines():
+			m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
+			if m:
+				self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
+		
 	def saveState(self):
 		self.config.save("%s.json" % (self.config.name))
 	
 	def submitInit(self):
 		self.config.enableNew()
 		self.submitReady = True
+	
+	def checkFinalize(self):
+		if self.config.finalizeStage==0:
+			cmd = ["bsub -q " + self.config.queue]
+			if self.config.requirement:
+				cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
+			subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+			(subOutput, _) = subCmd.communicate(self.config.finalJob.script)
+		
+			m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
+			if m:
+				self.config.updateFinalJob({"jobID":m.group(1),"queue":m.group(2)})
+		
+		return self.config.finalizeStage>=0
 	

@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 # encoding: utf-8
 '''
 batchTool -- LXBATCH monitoring tool
@@ -18,7 +18,7 @@ __version__ = 0.1
 __date__ = '2014-05-15'
 __updated__ = '2014-05-19'
 
-from batchTool import Display, Monitor
+from batchTool import Display2, Monitor
 from batchTool.config import BatchToolExceptions as BatchToolException
 try:
 	from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -32,7 +32,7 @@ mon = None
 def mainInit(scr=None):
 	global mon
 	
-	screen = Display()
+	screen = Display2()
 	screen.setScreen(scr)
 	screen.displayHeader(mon.config.getHeaders())
 	try:
@@ -54,6 +54,10 @@ def mainLoop(screen):
 	mon.monitor()
 	screen.displayTime(mon.config.startTime)
 	screen.displaySummary(mon.config.getStatusStats())
+
+	if mon.config.finalizeFinished():
+		screen.displayFinalize()
+	
 	if mon.submitReady:
 		if len(mon.submitList)==0:
 			screen.resetSubmit(mon.config.getJobsNumberReady())
@@ -62,6 +66,8 @@ def mainLoop(screen):
 		for job in mon.generateJobs():
 			mon.submit(job)
 			screen.displaySubmit(job.jobID, job.index)
+	
+	screen.repaint()
 	k = screen.getch()
 	if k != -1:
 		if screen.stdscr!=None:
@@ -71,8 +77,7 @@ def mainLoop(screen):
 				screen.setWaitingTime()
 			if curses.unctrl(k) == "^G":
 				mon.submitInit()
-
-
+	
 def argParser():
 	global mon
 	'''Command line options.'''
@@ -96,10 +101,10 @@ def argParser():
 	args = parser.parse_args()
 	
 	mon = Monitor(args.keep)
-	if args.config:
-		mon.newBatch(args.config, args.name, args.queue, args.test)
-	elif args.load:
-		mon.loadBatch(args.load)
+	#if args.config:
+		#mon.newBatch(args.config, args.name, args.queue, args.test)
+	#elif args.load:
+		#mon.loadBatch(args.load)
 
 	if args.nocurse:
 		mainInit()

@@ -18,6 +18,7 @@ class Display:
 	submitBlock = 17
 
 	debugBlock = 30
+	finalizeBlock = 30
 
 	submitTotal = 0
 	submitCurrent = 0
@@ -178,3 +179,8 @@ class Display:
 		for i,line in enumerate(strerr.splitlines()):
 			self.stdscr.addstr(self.debugBlock+i, 0, strerr)
 		self.repaint()
+
+	def displayFinalize(self):
+		if self.stdscr==None:
+			return
+		self.stdscr.addstr(self.finalizeBlock, 0, "Finalization job result")
