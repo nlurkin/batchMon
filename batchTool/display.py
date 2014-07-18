@@ -175,5 +175,6 @@ class Display:
 		self.stdscr.clrtoeol()
 
 	def setError(self, strerr):
-		self.stdscr.addstr(self.debugBlock, 0, strerr)
+		for i,line in enumerate(strerr.splitlines()):
+			self.stdscr.addstr(self.debugBlock+i, 0, strerr)
 		self.repaint()

@@ -18,7 +18,8 @@ class BatchToolExceptions:
 		pass
 	class ErrorMessage(Exception):
 		'''Generic error message'''
-		pass
+		def __init__(self, text):
+			self.strerror = text
 	
 def encode_dict(obj):
 	if isinstance(obj, BatchJob):
@@ -37,8 +38,9 @@ class BatchJob:
 	status = None
 	attempts = None
 	script = None
+	jobSeq = None
 	
-	def __init__(self, inputFile, index):
+	def __init__(self, inputFile, index, seq):
 		self.inputFile = inputFile
 		self.index = index
 		self.queue = None
@@ -46,6 +48,7 @@ class BatchJob:
 		self.status = None
 		self.attempts = -2
 		self.script = None
+		self.jobSeq = seq
 	
 	def update(self, dico):
 		if "inputFile" in dico:
@@ -127,7 +130,7 @@ fileList:
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
 			for job in jobsList:
-				j = BatchJob(None, None)
+				j = BatchJob(None, None, None)
 				j.__dict__ = job 
 				self.jobsList.append(j)
 	
@@ -151,10 +154,12 @@ fileList:
 		
 	def _readInputList(self, test):
 		with open(self.listFile,'r') as f:
+			j = 0
 			for i,line in enumerate(f):
 				if i>=self.startIndex:
 					if (not test) or self._testOutputFile(i):
-						self.jobsList.append(BatchJob(line.strip('\n'), i))
+						self.jobsList.append(BatchJob(line.strip('\n'), i, j))
+						j += 1
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
 		
@@ -200,6 +205,7 @@ fileList:
 		if cp.hasoption("requirement"):
 			self.requirement = cp.getoption("requirement")
 
+
 	def _readAndReplace(self, string, searchMap):
 		sReturn = ""
 		for line in string.splitlines():
@@ -218,7 +224,7 @@ fileList:
 		sReturn = "#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		indexList = range(0,self.jobNumber)
 		for i in indexList:
-			dico = self._buildSearchMap(i, self.jobsList[i].inputFile)
+			dico = self._buildSearchMap(self.jobsList[i].index, self.jobsList[i].inputFile)
 			pre = self._readAndReplace(self.preExecute, dico)
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
@@ -237,10 +243,10 @@ fileList:
 	
 	def updateJob(self, jobID, dico, keep):
 		reSubmit = False
-		index = -1
+		seq = -1
 		if jobID in self.jobCorrespondance:
-			jobNumber = self.jobCorrespondance[jobID]
-			job = self.jobsList[jobNumber]
+			jobSeq = self.jobCorrespondance[jobID]
+			job = self.jobsList[jobSeq]
 			#test state change
 			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
 			if job.status!=dico["status"]:
@@ -254,17 +260,17 @@ fileList:
 						if os.path.exists(lsfPath) and not keep:
 							shutil.rmtree(lsfPath)
 						reSubmit = True
-						index = jobNumber
+						seq = jobSeq
 						del self.jobCorrespondance[jobID]
 			
 			#do the update
 			job.update(dico)
-		return (reSubmit,index)
+		return (reSubmit,seq)
 	
-	def updateCorrespondance(self, jobID, jobIndex):
-		self.jobCorrespondance[jobID] = jobIndex
+	def updateCorrespondance(self, jobID, jobSeq):
+		self.jobCorrespondance[jobID] = jobSeq
 	
-	def getJobIndex(self, jobID):
+	def getJobSeq(self, jobID):
 		if jobID in self.jobCorrespondance:
 			return self.jobCorrespondance[jobID]
 		return -1
@@ -304,6 +310,7 @@ fileList:
 		for job in self.jobsList:
 			if job.attempts==-2 or job.attempts==self.maxAttempts and job.status=="EXIT":
 				job.attempts=-1
+				job.status = None
 	
 	def enableNew(self):
 		for job in self.jobsList:

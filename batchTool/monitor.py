@@ -6,6 +6,7 @@ Created on 16 May 2014
 from . import ConfigBatch
 import re
 import subprocess
+from . import BatchToolExceptions
 
 class Monitor:
 	'''
@@ -44,7 +45,7 @@ class Monitor:
 			job.jobID = m.group(1)
 			job.queue = m.group(2)
 			job.attempts += 1
-			self.config.updateCorrespondance(job.jobID, job.index)
+			self.config.updateCorrespondance(job.jobID, job.jobSeq)
 	
 	def generateJobs(self):
 		if len(self.submitList)==0:
