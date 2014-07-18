@@ -56,13 +56,13 @@ class Display2:
 			curses.halfdelay(self.currentDelay*10)
 			
 			#setup all windows
-			self.headerWindow = curses.newwin(7, self.stdscr.getmaxyx()[1], self.WinPositions.headerBlock, 0)
-			self.stdscr.hline(self.WinPositions.headerBlock+self.headerWindow.getmaxyx()[0], 0, '_', 130)
-			self.jobsWindow = curses.newwin(6, self.stdscr.getmaxyx()[1], self.WinPositions.summaryBlock, 0)
-			self.stdscr.hline(self.WinPositions.summaryBlock+self.jobsWindow.getmaxyx()[0], 0, '_', 130)
+			self.headerWindow = curses.newwin(8, self.stdscr.getmaxyx()[1], self.WinPositions.headerBlock, 0)
+			self.stdscr.hline(self.WinPositions.headerBlock+self.headerWindow.getmaxyx()[0], 0, '-', 130)
+			self.jobsWindow = curses.newwin(7, self.stdscr.getmaxyx()[1], self.WinPositions.summaryBlock, 0)
+			self.stdscr.hline(self.WinPositions.summaryBlock+self.jobsWindow.getmaxyx()[0], 0, '-', 130)
 			self.submitWindow = curses.newwin(8, self.stdscr.getmaxyx()[1], self.WinPositions.submitBlock, 0)
 			self.submitWindow.addstr(0,50, "Job submission status")
-			self.stdscr.hline(self.WinPositions.submitBlock+self.submitWindow.getmaxyx()[0], 0, '_', 130)
+			self.stdscr.hline(self.WinPositions.submitBlock+self.submitWindow.getmaxyx()[0], 0, '-', 130)
 			
 			self.erroWindow = curses.newwin(5, self.stdscr.getmaxyx()[1], self.WinPositions.debugBlock, 0)
 			
@@ -126,7 +126,7 @@ class Display2:
 		
 		i=0
 		for aNumber,[pend,run,fail] in enumerate(zip(stats["pending"]["attempts"], stats["running"]["attempts"], stats["failed"]["attempts"])):
-			if aNumber==0 or i>= 4:
+			if aNumber==0 or i>= self.jobsWindow.getmaxyx()[0]-1:
 				continue
 			if pend>0:
 				self.jobsWindow.addstr(1+i,25,str(pend))
