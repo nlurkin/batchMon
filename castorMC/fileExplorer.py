@@ -6,8 +6,6 @@ Created on Sep 24, 2014
 import fcntl
 import os
 import subprocess
-import sys
-from pyatspi.utils import getPath
 
 class FEIOError(Exception):
 	def __init__(self, value):

@@ -34,7 +34,7 @@ def mainInit(scr=None):
 	
 	screen = WindowDisplay(scr)
 	fs1 = FileExplorer(LocalConnector(screen), os.getcwd())
-	fs2 = FileExplorer(LocalConnector(screen), "/home/ncl")
+	fs2 = FileExplorer(CastorConnector(screen), "")
 	screen.displayHeader("xxx")
 	screen.displayLeftPath(fs1.currPath)
 	screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
