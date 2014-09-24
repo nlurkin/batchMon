@@ -61,11 +61,12 @@ class Monitor:
 		self.config.resetFailed()
 		self.submitReady = True
 	
-	def monitor(self):
+	def monitor(self, scr):
 		if not self.checkFinalize():
 			self.monitorNormal()
 		else:
 			self.monitorFinal()
+			scr.displayFinalJob(self.config.finalJob)
 	
 	def monitorNormal(self):
 		cmd = ["bjobs -a"]
@@ -108,7 +109,7 @@ class Monitor:
 				cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
 			subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
 			(subOutput, _) = subCmd.communicate(self.config.finalJob.script)
-		
+			
 			m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
 			if m:
 				self.config.updateFinalJob({"jobID":m.group(1),"queue":m.group(2)})

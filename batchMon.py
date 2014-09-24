@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # encoding: utf-8
 '''
 batchTool -- LXBATCH monitoring tool
@@ -51,12 +51,12 @@ def mainInit(scr=None):
 		
 
 def mainLoop(screen):
-	mon.monitor()
+	mon.monitor(screen)
 	screen.displayTime(mon.config.startTime)
 	screen.displaySummary(mon.config.getStatusStats())
-
+	
 	if mon.config.finalizeFinished():
-		screen.displayFinalize()
+		screen.displayFinalResult(mon.config.finalJob)
 	
 	if mon.submitReady:
 		if len(mon.submitList)==0:
@@ -101,10 +101,10 @@ def argParser():
 	args = parser.parse_args()
 	
 	mon = Monitor(args.keep)
-	#if args.config:
-		#mon.newBatch(args.config, args.name, args.queue, args.test)
-	#elif args.load:
-		#mon.loadBatch(args.load)
+	if args.config:
+		mon.newBatch(args.config, args.name, args.queue, args.test)
+	elif args.load:
+		mon.loadBatch(args.load)
 
 	if args.nocurse:
 		mainInit()

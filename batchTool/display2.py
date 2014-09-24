@@ -17,7 +17,7 @@ class Display2:
 		submitBlock = 17
 
 		debugBlock = 50
-		finalizeBlock = 30
+		finalizeBlock = 20
 
 	submitTotal = 0
 	submitCurrent = 0
@@ -65,7 +65,10 @@ class Display2:
 			self.stdscr.hline(self.WinPositions.submitBlock+self.submitWindow.getmaxyx()[0], 0, '-', 130)
 			
 			self.erroWindow = curses.newwin(5, self.stdscr.getmaxyx()[1], self.WinPositions.debugBlock, 0)
-			
+			self.finalWindow = curses.newwin(3, self.stdscr.getmaxyx()[1], self.WinPositions.finalizeBlock, 0)
+			self.finalWindow.addstr(0, 50, "Finalization job result")
+			self.stdscr.hline(self.WinPositions.finalizeBlock+self.submitWindow.getmaxyx()[0], 0, '-', 130)
+						
 			self.stdscr.nooutrefresh()
 			self.repaint()
 	
@@ -73,6 +76,7 @@ class Display2:
 		self.headerWindow.nooutrefresh()
 		self.jobsWindow.nooutrefresh()
 		self.submitWindow.nooutrefresh()
+		self.finalWindow.nooutrefresh()
 		self.erroWindow.nooutrefresh()
 		curses.doupdate()
 	
@@ -163,7 +167,6 @@ class Display2:
 		
 	
 	def resetSubmit(self, total):
-		return
 		if self.stdscr == None:
 			return
 		self.wipeSubmitBlock()
@@ -195,9 +198,16 @@ class Display2:
 	def setError(self, strerr):
 		self.erroWindow.addstr(0, 0, strerr)
 
-'''	
-	def displayFinalize(self):
+	
+	def displayFinalJob(self, job):
 		if self.stdscr==None:
 			return
-		self.stdscr.addstr(self.WinPositions.finalizeBlock, 0, "Finalization job result")
-'''
+			
+		self.finalWindow.addstr(1, 0, "JobID: %s" % job.jobID)
+		self.finalWindow.addstr(1, 30, "Status: %s" % job.status)
+	
+	def displayFinalResult(self, job):
+		if self.stdscr==None:
+			return
+		
+

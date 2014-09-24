@@ -22,7 +22,7 @@ class BatchToolExceptions:
 			self.strerror = text
 	
 def encode_dict(obj):
-	if isinstance(obj, BatchJob):
+	if isinstance(obj, BatchJob) or isinstance(obj,finalBatchJob):
 		return obj.__dict__
 	return obj
 
@@ -160,6 +160,9 @@ fileList:
 	def load(self, jsonFile):
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
+			xxx = finalBatchJob("")
+			xxx.__dict__ = self.finalJob
+			self.finalJob = xxx
 			for job in jobsList:
 				j = BatchJob(None, None, None)
 				j.__dict__ = job 
@@ -267,6 +270,8 @@ fileList:
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
 			self.jobsList[i].script = sReturn % (pre, command, post)
+		if len(indexList)>0 and self.finalJob:
+			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
 	
 	def __str__(self):
 		files = "" 
@@ -340,7 +345,7 @@ fileList:
 			elif job.status=="DONE":
 				finished += 1
 		
-		if finished==self.jobNumber and (unknown==0 and pending==0 and running==0 and failed==0):
+		if finished==self.jobNumber and (unknown==0 and pending["value"]==0 and running["value"]==0 and failed["value"]==0) and self.finalizeStage==-1:
 			self.finalizeStage = 0
 			
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
@@ -364,7 +369,8 @@ fileList:
 	
 	def updateFinalJob(self, dico):
 		if "status" in dico:
-			if self.finalJob.status!=dico["status"]:
+			if dico["jobID"]==self.finalJob.jobID and self.finalJob.status!=dico["status"]:
+				print dico
 				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(self.finalJob.jobID)
 				if dico["status"]=="DONE":
 					#get output, save it and clean
