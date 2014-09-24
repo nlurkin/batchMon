@@ -35,7 +35,7 @@ def mainInit(scr=None):
 	screen = WindowDisplay(scr)
 	fs1 = FileExplorer(LocalConnector(screen), os.getcwd())
 	fs2 = FileExplorer(CastorConnector(screen), "")
-	screen.displayHeader("xxx")
+	screen.displayHeader()
 	screen.displayLeftPath(fs1.currPath)
 	screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
 	screen.displayRightPath(fs2.currPath)
@@ -54,7 +54,6 @@ def mainLoop():
 	screen.repaint()
 	k = screen.getch()
 	if k != -1:
-		print k
 		if curses.unctrl(k) == "^W":
 			screen.switchList()
 		elif k == curses.KEY_DOWN:
@@ -76,24 +75,24 @@ def mainLoop():
 def levelDown():
 	global screen, fs1, fs2
 	if screen.currList == screen.leftList:
-		fs1.goDown(screen.currList.currentCursor)
-		fs1.refresh()
-		screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
+		if fs1.goDown(screen.currList.currentCursor):
+			screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
+			screen.displayLeftPath(fs1.currPath)
 	else:
-		fs2.goDown(screen.currList.currentCursor)
-		fs2.refresh()
-		screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
+		if fs2.goDown(screen.currList.currentCursor):
+			screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
+			screen.displayRightPath(fs2.currPath)
 
 def levelUp():
 	global screen, fs1, fs2
 	if screen.currList == screen.leftList:
 		fs1.goUp()
-		fs1.refresh()
 		screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
+		screen.displayLeftPath(fs1.currPath)
 	else:
 		fs2.goUp()
-		fs2.refresh()
 		screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
+		screen.displayRightPath(fs2.currPath)
 
 def copy():
 	global screen, fs1, fs2
@@ -116,6 +115,8 @@ def copy():
 def delete():
 	global screen, fs1, fs2
 	ret = 0
+	if not screen.confirm():
+		return
 	if screen.currList == screen.leftList:
 		ret = fs1.delete(screen.currList.currentCursor)
 		fs1.refresh()

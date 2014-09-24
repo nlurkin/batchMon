@@ -85,7 +85,10 @@ class FileExplorer(object):
 	
 	
 	def cd(self, path):
-		self.currPath = path
+		self.currPath = self.connector.makePath(path)
+		self.fillPath()
+		
+	def fillPath(self):
 		if not self.connector.exists(self.currPath):
 			#error
 			pass
@@ -93,16 +96,20 @@ class FileExplorer(object):
 		(self.dirList, self.fileList) = self.connector.listFiles(self.currPath)
 	
 	def goDown(self, index):
-		(_, path) = self.getPath(index)
-		self.cd(path)
+		(ftype, path) = self.getPath(index)
+		if ftype==1:
+			return False
+		self.currPath = path
+		self.fillPath()
+		return True
 	
 	def goUp(self):
-		path = os.path.dirname(self.currPath)
-		self.cd(path)
+		self.currPath = os.path.dirname(self.currPath)
+		self.fillPath()
 
 		
 	def refresh(self):
-		self.cd(self.currPath)
+		self.fillPath()
 		
 	def getPath(self, index):
 		if index < len(self.dirList):
@@ -114,7 +121,9 @@ class FileExplorer(object):
 		return self.connector.delete(self.getPath(index))
 	
 	def copy(self, index, otherfs):
-		return self.connector.copy(self.getPath(index), otherfs.currPath, getCopyCommand(self.connector, otherfs.connector))
+		path = self.getPath(index)
+		fname = os.path.basename(path[1])
+		return self.connector.copy(path, otherfs.connector.makeCPPath(otherfs.currPath + "/" + fname), getCopyCommand(self.connector, otherfs.connector))
 
 class CastorConnector(object):
 	'''
@@ -131,7 +140,7 @@ class CastorConnector(object):
 		cmd = [command]
 		if ftype==0:
 			cmd.append("-r")
-		cmd.append(self.makePath(path))
+		cmd.append(self.protocol + path)
 		cmd.append(otherPath)
 		
 		return execute(cmd, self.scr)
@@ -161,14 +170,17 @@ class CastorConnector(object):
 		return (dirList, fileList)
 	
 	def makePath(self, path):
-		return self.protocol + self.prefix + "/" + path
+		return self.prefix + "/" + path
+
+	def makeCPPath(self, path):
+		return self.protocol + path
 	
 	def delete(self, (ftype,path)):
 		try:
 			if ftype==0:
-				execute(["nsrm" , "-r", self.prefix + "/" + path], self.scr)
+				execute(["nsrm" , "-r", path], self.scr)
 			elif ftype==1:
-				execute(["nsrm" , self.prefix + "/" + path], self.scr)
+				execute(["nsrm" , path], self.scr)
 		except:
 			return -1
 		
@@ -216,6 +228,10 @@ class LocalConnector(object):
 	
 	def makePath(self, path):
 		return path
+		
+	def makeCPPath(self, path):
+		return path
+
 	
 	def delete(self, (ftype,path)):
 		try:
