@@ -18,7 +18,7 @@ import os
 import sys
 
 from castorMC import WindowDisplay
-from castorMC import FileExplorer, LocalConnector, FEIOError
+from castorMC import FileExplorer, LocalConnector, FEIOError, CastorConnector
 
 
 __version__ = 0.1
@@ -34,7 +34,7 @@ def mainInit(scr=None):
 	
 	screen = WindowDisplay(scr)
 	fs1 = FileExplorer(LocalConnector(screen), os.getcwd())
-	fs2 = FileExplorer(LocalConnector(screen), "")
+	fs2 = FileExplorer(CastorConnector(screen), "")
 	screen.displayHeader("xxx")
 	screen.displayLeftPath(fs1.currPath)
 	screen.leftList.displayFiles(fs1.dirList, fs1.fileList)

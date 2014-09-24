@@ -15,7 +15,7 @@ class FEIOError(Exception):
 		return repr(self.value)
 	
 def getCopyCommand(conn1, conn2):
-	if conn1.__class__.__name__ == CastorConnector or conn2.__class__.__name__ == CastorConnector:
+	if conn1.__class__.__name__ == "CastorConnector" or conn2.__class__.__name__ == "CastorConnector":
 		return "xrdcp"
 	else:
 		return "cp"
@@ -28,19 +28,19 @@ def setNonBlocking(fd):
 	flags = flags | os.O_NONBLOCK
 	fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
-def execute(command):
-	sys.__stdout__.write(command.__str__()),
+def execute(command, scr):
 	try:
-		cmd= subprocess.Popen(command, stdout=subprocess.PIPE)
+		cmd= subprocess.Popen(command, stderr=subprocess.PIPE)
 	except OSError as e:
 		raise FEIOError("Unable to run command [Error {0}]: {1}".format(e.errno, e.strerror))
 		
-		
-	for line in iter(cmd.stdout.readline, ""):
-		sys.__stdout__.write(line),
+	#setNonBlocking(cmd.stdout)
+	for line in iter(cmd.stderr.readline, ""):
+#		sys.__stdout__.write(line),
+		scr.printError(line)
 	
 	cmd.communicate()	
-	#setNonBlocking(cmd.stdout)
+	#
 	#line = ""
 	#while True:
 		#while True:
@@ -59,13 +59,13 @@ def execute(command):
 	return cmd.returncode
 
 def executeGet(command):
-	try:
-		cmd= subprocess.Popen(command, stdout=subprocess.PIPE)
-	except OSError as e:
-		raise FEIOError("Unable to run command [Error {0}]: {1}".format(e.errno, e.strerror))
+	#try:
+	cmd= subprocess.Popen(command, stdout=subprocess.PIPE)
+	#except OSError as e:
+	#	raise FEIOError("Unable to run command [Error {0}]: {1}".format(e.errno, e.strerror))
 		
 	(out, _) = cmd.communicate()
-	return (out, cmd.returncode)
+	return (out.splitlines(), cmd.returncode)
 
 class FileExplorer(object):
 	'''
@@ -113,29 +113,30 @@ class CastorConnector(object):
 	classdocs
 	'''
 	
-	prefix = "xroot://castorpublic.cern.ch//castor/cern.ch/user/n/nlurkin"
+	protocol = "xroot://castorpublic.cern.ch/"
+	prefix = "/castor/cern.ch/user/n/nlurkin"
 	
 	def __init__(self, screen):
 		self.scr = screen
 	
-	#def copy(self, (ftype,path), otherPath, command):
-		#cmd = [command]
-		#if ftype==0:
-			#cmd.append("-r")
-		#cmd.append(path)
-		#cmd.append(otherPath)
+	def copy(self, (ftype,path), otherPath, command):
+		cmd = [command]
+		if ftype==0:
+			cmd.append("-r")
+		cmd.append(self.makePath(path))
+		cmd.append(otherPath)
 		
-		#return execute(cmd)
+		return execute(cmd, self.scr)
 	
 	def exists(self, path):
-		(_,ret) = executeGet(["nsls", self.prefix + "/" + path])
+		(_,ret) = executeGet(["nsls", path])
 		if ret==0:
 			return True
 		else:
 			return False
 			
 	def listFiles(self, path):
-		(entryList,_) = executeGet(["nsls", "-l", self.prefix + "/" + path])
+		(entryList,_) = executeGet(["nsls", "-l", path])
 		dirList = []
 		fileList = []
 		for f in entryList:
@@ -143,23 +144,23 @@ class CastorConnector(object):
 			if l[8].startswith("."):
 				continue
 			if l[0][0]=="d":
-				dirList.append(f)
+				dirList.append(l[8])
 			else:
-				fileList.append(f)
+				fileList.append(l[8])
 		
 		dirList.sort(key=str.lower)
 		fileList.sort(key=str.lower)
 		return (dirList, fileList)
 	
 	def makePath(self, path):
-		return path
+		return self.protocol + self.prefix + "/" + path
 	
 	def delete(self, (ftype,path)):
 		try:
 			if ftype==0:
-				os.rmdir(path)
+				execute(["nsrm" , "-r", self.prefix + "/" + path], self.scr)
 			elif ftype==1:
-				os.remove(path)
+				execute(["nsrm" , self.prefix + "/" + path], self.scr)
 		except:
 			return -1
 		
@@ -180,7 +181,7 @@ class LocalConnector(object):
 		cmd.append(path)
 		cmd.append(otherPath)
 		
-		return execute(cmd)
+		return execute(cmd, self.scr)
 	
 	def exists(self, path):
 		if not os.path.exists(path):
