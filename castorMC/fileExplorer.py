@@ -7,6 +7,7 @@ import fcntl
 import os
 import subprocess
 import sys
+from pyatspi.utils import getPath
 
 class FEIOError(Exception):
 	def __init__(self, value):
@@ -93,6 +94,15 @@ class FileExplorer(object):
 		
 		(self.dirList, self.fileList) = self.connector.listFiles(self.currPath)
 	
+	def goDown(self, index):
+		(_, path) = self.getPath(index)
+		self.cd(path)
+	
+	def goUp(self):
+		path = os.path.dirname(self.currPath)
+		self.cd(path)
+
+		
 	def refresh(self):
 		self.cd(self.currPath)
 		
@@ -165,6 +175,7 @@ class CastorConnector(object):
 			return -1
 		
 		return 0
+	
 
 class LocalConnector(object):
 	'''
