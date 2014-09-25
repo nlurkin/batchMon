@@ -170,9 +170,9 @@ class CastorConnector(object):
 			if l[8].startswith("."):
 				continue
 			if l[0][0]=="d":
-				dirList.append(l[8])
+				dirList.append({"name":l[8], "type":"d", "mtime":("%s %s %s")%(l[5], l[6],l[7])})
 			else:
-				fileList.append(l[8])
+				fileList.append({"name":l[8], "type":"f", "size":l[4], "mtime":("%s %s %s")%(l[5], l[6],l[7])})
 		
 		dirList.sort(key=str.lower)
 		fileList.sort(key=str.lower)
