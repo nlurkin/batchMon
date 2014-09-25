@@ -48,6 +48,8 @@ def mainInit(scr=None):
 			pass
 		except FEIOError as e:
 			screen.printError(e.value)
+		except KeyboardInterrupt:
+			sys.exit(0)
 			
 def mainLoop():
 	global screen
