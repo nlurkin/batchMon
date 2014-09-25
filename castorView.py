@@ -40,6 +40,7 @@ def mainInit(scr=None):
 	screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
 	screen.displayRightPath(fs2.currPath)
 	screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
+	screen.rightList.hideCursor()
 	
 	while True:
 		try:
@@ -60,6 +61,8 @@ def mainLoop():
 			screen.currList.goDown()
 		elif k == curses.KEY_UP:
 			screen.currList.goUp()
+		elif curses.unctrl(k) == " ":
+			screen.currList.select()
 		elif curses.unctrl(k) == "c":
 			copy()
 		elif curses.unctrl(k) == "d":
@@ -98,16 +101,17 @@ def copy():
 	global screen, fs1, fs2
 	ret = 0
 	if screen.currList == screen.leftList:
-		ret = fs1.copy(screen.currList.currentCursor, fs2)
+		ret = fs1.copy(screen.currList.selected, fs2)
 		fs2.refresh()
 		screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
 	else:
-		ret = fs2.copy(screen.currList.currentCursor, fs1)
+		ret = fs2.copy(screen.currList.selected, fs1)
 		fs1.refresh()
 		screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
-
+	
 	if ret==0:
 		screen.printMessage("Copy successful")
+		screen.currList.unselectAll()
 	else:
 		screen.printMessage("Copy failed")
 	screen.repaint()
@@ -118,11 +122,11 @@ def delete():
 	if not screen.confirm():
 		return
 	if screen.currList == screen.leftList:
-		ret = fs1.delete(screen.currList.currentCursor)
+		ret = fs1.delete(screen.currList.selected)
 		fs1.refresh()
 		screen.leftList.displayFiles(fs1.dirList, fs1.fileList)
 	else:
-		ret = fs2.delete(screen.currList.currentCursor)
+		ret = fs2.delete(screen.currList.selected)
 		fs2.refresh()
 		screen.rightList.displayFiles(fs2.dirList, fs2.fileList)
 

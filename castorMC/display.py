@@ -5,6 +5,9 @@ Created on Sep 24, 2014
 '''
 
 import curses
+import datetime
+import time
+
 
 class WindowDisplay(object):
 	'''
@@ -14,9 +17,9 @@ class WindowDisplay(object):
 	class WinPositions:
 		headerBlock = 0
 		pathBlock = 3
-		fileListBlock = 4
+		fileListBlock = 5
 		fileListEnd = 30
-		fileMiddle = 60
+		fileMiddle = 100
 		messageBlock = 31
 		errorBlock = 40
 		
@@ -48,17 +51,19 @@ class WindowDisplay(object):
 		#curses.halfdelay(self.currentDelay*10)
 		
 		#setup all windows
-		self.headerWindow = curses.newwin(8, self.stdscr.getmaxyx()[1], self.WinPositions.headerBlock, 0)
+		self.stdscr.vline(self.WinPositions.fileListBlock-1, self.WinPositions.fileMiddle+1, "|", self.WinPositions.fileListEnd-self.WinPositions.fileListBlock+2)
+		self.headerWindow = curses.newwin(3, self.stdscr.getmaxyx()[1], self.WinPositions.headerBlock, 0)
 		#self.stdscr.hline(self.WinPositions.headerBlock+self.headerWindow.getmaxyx()[0], 0, '-', 130)
-		self.pathWindow = curses.newwin(7, self.stdscr.getmaxyx()[1], self.WinPositions.pathBlock, 0)
-		self.leftList = FileDisplay(self.WinPositions.fileListBlock, self.WinPositions.fileListEnd, 0)
-		self.rightList = FileDisplay(self.WinPositions.fileListBlock, self.WinPositions.fileListEnd, self.WinPositions.fileMiddle)
+		self.pathWindow = curses.newwin(1, self.stdscr.getmaxyx()[1], self.WinPositions.pathBlock, 0)
+		self.leftList = FileDisplay(self.WinPositions.fileListBlock, self.WinPositions.fileListEnd, 0, self.WinPositions.fileMiddle)
+		self.rightList = FileDisplay(self.WinPositions.fileListBlock, self.WinPositions.fileListEnd, self.WinPositions.fileMiddle+2, self.WinPositions.fileMiddle)
 		self.currList = self.leftList
 		self.focusLeftPath()
 		
 		self.messageWindow = curses.newwin(4, self.stdscr.getmaxyx()[1], self.WinPositions.messageBlock, 0)
 		self.errorWindow = curses.newwin(10, self.stdscr.getmaxyx()[1], self.WinPositions.errorBlock, 0)
 		self.iError = 0
+		
 		#self.fileListWindow = curses.newwin(0, self.stdscr.getmaxyx()[1], self.WinPositions.fileListBlock, 0)
 		#self.fileListWindow = curses.newpad(3, self.stdscr.getmaxyx()[1])
 		#self.stdscr.hline(self.WinPositions.summaryBlock+self.jobsWindow.getmaxyx()[0], 0, '-', 130)
@@ -144,6 +149,10 @@ class WindowDisplay(object):
 		self.pathWindow.chgat(10, curses.color_pair(0))
 		self.pathWindow.move(0,self.WinPositions.fileMiddle+10)
 		self.pathWindow.chgat(self.WinPositions.fileMiddle-10, curses.color_pair(2))
+		#self.leftList.fileListWindow.bkgd(" ", curses.color_pair(1))
+		#self.rightList.fileListWindow.bkgd(" ", curses.color_pair(0))
+		self.leftList.showCursor()
+		self.rightList.hideCursor()
 
 
 	def focusRightPath(self):
@@ -155,6 +164,10 @@ class WindowDisplay(object):
 		self.pathWindow.chgat(10, curses.color_pair(1))
 		self.pathWindow.move(0,self.WinPositions.fileMiddle+10)
 		self.pathWindow.chgat(self.WinPositions.fileMiddle-10, curses.color_pair(2))
+		#self.leftList.fileListWindow.bkgd(" ", curses.color_pair(0))
+		#self.rightList.fileListWindow.bkgd(" ", curses.color_pair(1))
+		self.leftList.hideCursor()
+		self.rightList.showCursor()
 
 
 	def switchList(self):
@@ -184,8 +197,12 @@ class FileDisplay(object):
 	classdocs
 	'''
 	
+	class fieldsSize:
+		nameField = 50
+		sizeField = 20
+		timeField = 20
 
-	def __init__(self, start, end, leftCorner):
+	def __init__(self, start, end, leftCorner, width):
 		'''
 		Constructor
 		'''
@@ -193,26 +210,33 @@ class FileDisplay(object):
 		self.listLength = 0
 		self.currentFileWinPos = 0
 	
-		self.fileListWindow = curses.newpad(100, 50)
+		self.fileListWindow = curses.newpad(100, width)
 		self.winStart = start
 		self.winEnd = end
 		self.winLeft = leftCorner
+		self.width = width
+		self.selected = []
 
 	def repaint(self):
-		self.fileListWindow.nooutrefresh(self.currentFileWinPos, 0, self.winStart, self.winLeft, self.winEnd, self.winLeft+50)
+		self.fileListWindow.nooutrefresh(self.currentFileWinPos, 0, self.winStart, self.winLeft, self.winEnd, self.winLeft+self.width)
 	
 	def displayFiles(self, dirList, fileList):
 		self.fileListWindow.clear()
 		
+		self.selected = []
+		
 		i = 0
 		for d in dirList:
 			self.fileListWindow.addstr(i, 2, "[ ] ", curses.color_pair(3))
-			self.fileListWindow.addstr(d, curses.color_pair(3))
+			self.fileListWindow.addnstr(d["name"], self.fieldsSize.nameField, curses.color_pair(3))
+			self.fileListWindow.addnstr(i, 2+self.fieldsSize.nameField+self.fieldsSize.sizeField+1, self.getTime(d["mtime"]), self.fieldsSize.timeField)
 			i = i + 1
 		
 		for f in fileList:
 			self.fileListWindow.addstr(i, 2, "[ ] ")
-			self.fileListWindow.addstr(f)
+			self.fileListWindow.addnstr(f["name"], self.fieldsSize.nameField)
+			self.fileListWindow.addnstr(i, 2+self.fieldsSize.nameField+1, self.getSize(f["size"]), self.fieldsSize.sizeField)
+			self.fileListWindow.addnstr(i, 2+self.fieldsSize.nameField+self.fieldsSize.sizeField+1, self.getTime(f["mtime"]), self.fieldsSize.timeField)
 			i = i + 1
 		
 		self.listLength = len(dirList) + len(fileList)
@@ -221,7 +245,7 @@ class FileDisplay(object):
 	
 	def goReset(self):
 		for i in range(0,self.listLength):
-			self.fileListWindow.addstr(i, 3, " ")
+			self.setStateChar(i, False)
 		
 	def goCheck(self, index):
 		if self.listLength==0:
@@ -245,18 +269,56 @@ class FileDisplay(object):
 		if not self.goCheck(0):
 			return
 		self.currentCursor = 0
-		self.fileListWindow.addstr(self.currentCursor, 3, "*")
+		self.setStateChar(self.currentCursor, True)
 		
 	def goDown(self):
 		if not self.goCheck(self.currentCursor+1):
 			return
 		self.goReset()
 		self.currentCursor += 1
-		self.fileListWindow.addstr(self.currentCursor, 3, "*")
+		self.setStateChar(self.currentCursor, True)
 		
 	def goUp(self):
 		if not self.goCheck(self.currentCursor-1):
 			return
 		self.goReset()
 		self.currentCursor -= 1
-		self.fileListWindow.addstr(self.currentCursor, 3, "*")
+		self.setStateChar(self.currentCursor, True)
+	
+	def select(self):
+		if self.currentCursor in self.selected:
+			self.selected.remove(self.currentCursor)
+			self.setStateChar(self.currentCursor, True)
+		else:
+			self.selected.append(self.currentCursor)
+			self.setStateChar(self.currentCursor, False)
+	
+	def unselectAll(self):
+		cp = self.selected
+		self.selected = []
+		for i in cp:
+			self.setStateChar(i, i==self.currentCursor)
+	
+	def hideCursor(self):
+		self.setStateChar(self.currentCursor, False)
+
+	def showCursor(self):
+		self.setStateChar(self.currentCursor, True)
+		
+	def setStateChar(self, index, coming):
+		if coming:
+			self.fileListWindow.addstr(index, 3, "*")
+		else:
+			if index in self.selected:
+				self.fileListWindow.addstr(index, 3, "x")
+			else:
+				self.fileListWindow.addstr(index, 3, " ")
+		
+	def getSize(self, nBytes):
+		for x in ['bytes','KB','MB','GB','TB']:
+			if nBytes < 1024.0:
+				return "%3.1f %s" % (nBytes, x)
+			nBytes /= 1024.0
+	
+	def getTime(self, mtime):
+		return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")

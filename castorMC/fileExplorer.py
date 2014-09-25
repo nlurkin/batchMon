@@ -3,9 +3,12 @@ Created on Sep 24, 2014
 
 @author: ncl
 '''
-import fcntl
+from operator import itemgetter
 import os
 import subprocess
+
+import fcntl
+
 
 class FEIOError(Exception):
 	def __init__(self, value):
@@ -113,17 +116,23 @@ class FileExplorer(object):
 		
 	def getPath(self, index):
 		if index < len(self.dirList):
-			return (0, self.currPath + "/" + self.dirList[index])
+			return (0, self.currPath + "/" + self.dirList[index]["name"])
 		else:
-			return (1, self.currPath + "/" + self.fileList[index - len(self.dirList)])
+			return (1, self.currPath + "/" + self.fileList[index - len(self.dirList)]["name"])
 	
-	def delete(self, index):
-		return self.connector.delete(self.getPath(index))
+	def delete(self, indices):
+		ret = 0
+		for index in indices:
+			ret = self.connector.delete(self.getPath(index))
+		return ret
 	
-	def copy(self, index, otherfs):
-		path = self.getPath(index)
-		fname = os.path.basename(path[1])
-		return self.connector.copy(path, otherfs.connector.makeCPPath(otherfs.currPath + "/" + fname), getCopyCommand(self.connector, otherfs.connector))
+	def copy(self, indices, otherfs):
+		ret = 0
+		for index in indices:
+			path = self.getPath(index)
+			fname = os.path.basename(path[1])
+			ret = ret + self.connector.copy(path, otherfs.connector.makeCPPath(otherfs.currPath + "/" + fname), getCopyCommand(self.connector, otherfs.connector))
+		return ret
 
 class CastorConnector(object):
 	'''
@@ -218,12 +227,13 @@ class LocalConnector(object):
 			if f.startswith("."):
 				continue
 			if os.path.isdir(path + "/" + f):
-				dirList.append(f)
+				dirList.append({"name":f, "type":"d", "mtime":os.stat(path+"/"+f).st_mtime})
 			else:
-				fileList.append(f)
+				info = os.stat(path + "/" + f)
+				fileList.append({"name":f, "type":"f", "size":info.st_size, "mtime":info.st_mtime})
 		
-		dirList.sort(key=str.lower)
-		fileList.sort(key=str.lower)
+		dirList.sort(key=lambda k: k['name'].lower()) 
+		fileList.sort(key=lambda k: k['name'].lower())
 		return (dirList, fileList)
 	
 	def makePath(self, path):
