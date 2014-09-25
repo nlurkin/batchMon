@@ -6,6 +6,9 @@ Created on Sep 24, 2014
 from operator import itemgetter
 import os
 import subprocess
+import sys
+import time
+import datetime
 
 import fcntl
 
@@ -170,12 +173,18 @@ class CastorConnector(object):
 			if l[8].startswith("."):
 				continue
 			if l[0][0]=="d":
-				dirList.append({"name":l[8], "type":"d", "mtime":("%s %s %s")%(l[5], l[6],l[7])})
+				dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
+				dt.replace(year=2014)
+				t = time.mktime(dt.timetuple())
+				dirList.append({"name":l[8], "type":"d", "mtime":t})
 			else:
-				fileList.append({"name":l[8], "type":"f", "size":l[4], "mtime":("%s %s %s")%(l[5], l[6],l[7])})
+				dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
+				dt.replace(year=2014)
+				t = time.mktime(dt.timetuple())
+				fileList.append({"name":l[8], "type":"f", "size":int(l[4]), "mtime":t})
 		
-		dirList.sort(key=str.lower)
-		fileList.sort(key=str.lower)
+		dirList.sort(key=lambda k: k['name'].lower())
+		fileList.sort(key=lambda k: k['name'].lower())
 		return (dirList, fileList)
 	
 	def makePath(self, path):
