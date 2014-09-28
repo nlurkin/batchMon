@@ -1,6 +1,6 @@
-executable = /afs/cern.ch/user/n/nlurkin/Compact/compact 
-listFile = /afs/cern.ch/user/n/nlurkin/Compact/lists/scmp.p5.pass2.list
-outputDir = /afs/cern.ch/user/n/nlurkin/batch/output_test
+executable = xxx 
+listFile = list
+outputDir = ccc
 maxJobs = 5
 outputFile = job_test$jobIndex.root
 requirement = type=SLC5_64
