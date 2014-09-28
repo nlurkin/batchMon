@@ -1,3 +1,5 @@
+#!/bin/env python
+
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from batchServer import jobServer
 from batchTool.xxx import DisplayClient
