@@ -1,4 +1,7 @@
 #!/bin/env python
+"""
+xxx
+"""
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from batchServer import jobServer
@@ -9,7 +12,7 @@ import select
 import socket
 import sys
 
-server = Pyro4.Proxy("PYRONAME:castor.jobServer")
+server = None
 serveruri = ""
 client = None
 
@@ -20,38 +23,66 @@ def mainLoop():
             pyroSockets = set(pyroDaemon.sockets)
             rs = []  # only the broadcast server is directly usable as a select() object
             rs.extend(pyroSockets)
-            rs, _, _ = select.select(rs, [], [], 3)
+            #rs.extend()
+            rs, _, _ = select.select(rs, [], [], 0.1)
             eventsForDaemon = []
+            
             for s in rs:
                 if s in pyroSockets:
                     eventsForDaemon.append(s)
-                
+                     
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
                     
-            client.mainLoop()
+            ret,name = client.mainLoop()
+            
+            if ret==-1:
+                server.disconnectClient(name, serveruri)
+                l = server.getBatchList()
+                client.displayBatchList(l)
+            elif ret== +1:
+                registerClient(name)
+            elif ret==+100:
+                server.resubmitFailed(name)
+            elif ret==+101:
+                server.submitInit(name)
+            
 
         except KeyboardInterrupt:
             break
             
-    server.disconnectClient("xxx", serveruri)
+    server.disconnectClient(client.getName(), serveruri)
     pyroDaemon.close()
 
+def registerClient(name):
+    global client, serveruri
+    startTime, headers = server.registerClient(name, serveruri)
+    
+    client.setStartTime(startTime)
+    client.displayHeader(headers)
+    
 def mainInit(scr=None):
-    global pyroDaemon, serveruri, client
+    global pyroDaemon, serveruri, client, server
     client = DisplayClient(scr)
     
     pyroDaemon = Pyro4.core.Daemon(host=socket.gethostname())
     # register a server object with the daemon
     serveruri = pyroDaemon.register(client)
-    print("server uri=%s" % serveruri)
     
-    server.registerClient("xxx", serveruri)
+    l = server.getBatchList()
+    client.displayBatchList(l)
+    
+    #startTime, headers = server.registerClient("xxx", serveruri)
+    
+    #client.setStartTime(startTime)
+    #client.displayHeader(headers)
     
     mainLoop()
 
 def argParser():
     '''Command line options.'''
+    
+    global server
     
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
@@ -64,21 +95,22 @@ def argParser():
                     help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
-    groupNew = parser.add_mutually_exclusive_group(required=True)
+    groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
     
+    server = Pyro4.Proxy("PYRONAME:castor.jobServer")
     
-    
-    if args.config:
+    #if args.config:
         #mon.newBatch(args.config, args.name, args.queue, args.test)
-        server.addBatch("testConfig", "xxx", "1nh", True, False)
-    elif args.load:
+    server.addBatch("testConfig", "xxx", "1nh", True, False)
+    server.addBatch("testConfig", "xxx2", "1nh", True, False)
+    #elif args.load:
         #mon.loadBatch(args.load)
-        pass
+    #    pass
 
     if args.nocurse:
         mainInit()

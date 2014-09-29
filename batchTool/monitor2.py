@@ -30,11 +30,11 @@ class Monitor2:
         cmd = ["bsub -q " + self.config.queue]
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
-        #subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-        #(subOutput, _) = subCmd.communicate(job.script)
-        f = open("simSubmit", "r")
-        subOutput = f.read()
-        f.close()
+        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+        (subOutput, _) = subCmd.communicate(job.script)
+        #f = open("simSubmit", "r")
+        #subOutput = f.read()
+        #f.close()
         
         m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
         if m:
@@ -65,11 +65,11 @@ class Monitor2:
     
     def monitorNormal(self):
         cmd = ["bjobs -a"]
-        #subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        #(monOutput, _) = subCmd.communicate()
-        f = open("simReq", "r")
-        monOutput = f.read()
-        f.close()
+        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (monOutput, _) = subCmd.communicate()
+        #f = open("simReq", "r")
+        #monOutput = f.read()
+        #f.close()
     
         reSubmit = []
         for line in monOutput.splitlines():

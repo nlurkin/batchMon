@@ -9,8 +9,7 @@ from batchTool.monitor2 import Monitor2
 import Pyro4
 import select
 import socket
-from batchTool.xxx import DisplayClient
-
+from batchTool.xxx import DisplayClient 
 
 nsDaemon = None
 pyroDaemon = None
@@ -45,8 +44,7 @@ class jobServer:
         if name in self.listBatch:
             client = Pyro4.Proxy(clientUri)
             self.listBatch[name]["clients"].append(client)
-            client.setStartTime(self.listBatch[name]["monitor"].config.startTime)
-            client.displayHeader(self.listBatch[name]["monitor"].config.getHeaders())
+            return self.listBatch[name]["monitor"].config.startTime, self.listBatch[name]["monitor"].config.getHeaders()
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
@@ -70,6 +68,16 @@ class jobServer:
             l.append(name)
         return l
     
+    def submitInit(self, name):
+        print "Init submiting batch"
+        if name in self.listBatch:
+            self.listBatch[name]["monitor"].submitInit()
+    
+    def resubmitFailed(self, name):
+        print "resubmiting failed batch"
+        if name in self.listBatch:
+            self.listBatch[name]["monitor"].reSubmitFailed()
+    
     def mainLoop(self):
         for _,batch in self.listBatch.iteritems():
             batch["monitor"].monitor()
@@ -87,7 +95,7 @@ class jobServer:
                 for job in batch["monitor"].generateJobs():
                     batch["monitor"].submit(job)
                     for clients in batch["clients"]:
-                        clients.displayJobSent(job.jobID, job.jobIndex)
+                        clients.displayJobSent(job.jobID, job.index)
 
 
         

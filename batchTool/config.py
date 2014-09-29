@@ -65,6 +65,9 @@ class BatchJob:
 			self.attempts = dico["attempts"]
 		if "script" in dico:
 			self.script = dico["script"]
+	
+	def __str__(self):
+		return self.__dict__.__str__() 
 
 class finalBatchJob:
 	'''

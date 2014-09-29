@@ -33,12 +33,11 @@ class Display:
 		Constructor
 		'''
 		self.stdscr = None
+		self.displayList = False
 	
 	def getch(self):
-		if self.stdscr == None:
-			return
 		try:
-			return self.stdscr.getkey()
+			return self.stdscr.getch()
 		except curses.error:
 			return -1
 		
@@ -56,6 +55,9 @@ class Display:
 			self.stdscr.clrtoeol()
 	
 	def repaint(self):
+		if self.displayList:
+			self.batchList.repaint()
+			
 		self.stdscr.refresh()
 	
 	def displayHeader(self, headers):
@@ -184,3 +186,140 @@ class Display:
 		if self.stdscr==None:
 			return
 		self.stdscr.addstr(self.finalizeBlock, 0, "Finalization job result")
+		
+	def displayBatchList(self, l):
+		self.stdscr.clear()
+		self.displayList = True
+		self.batchList = FileDisplay(5, 30, 0, 150)
+		self.batchList.displayFiles(l)
+		
+	def reset(self):
+		self.displayList = False
+		self.stdscr.clear()
+		self.stdscr.refresh()
+		
+class FileDisplay(object):
+	'''
+	classdocs
+	'''
+	
+	class fieldsSize:
+		nameField = 50
+		sizeField = 20
+		timeField = 20
+
+	def __init__(self, start, end, leftCorner, width):
+		'''
+		Constructor
+		'''
+		self.currentCursor = 0
+		self.listLength = 0
+		self.currentFileWinPos = 0
+	
+		self.fileListWindow = curses.newpad(100, width)
+		self.winStart = start
+		self.winEnd = end
+		self.winLeft = leftCorner
+		self.width = width
+		self.selected = []
+
+	def repaint(self):
+		#raise Exception(self.currentFileWinPos.__str__() + "0" + self.winStart.__str__() + self.winLeft.__str__() + self.winEnd.__str__() + (self.winLeft+self.width).__str__())
+		self.fileListWindow.nooutrefresh(self.currentFileWinPos, 0, self.winStart, self.winLeft, self.winEnd, self.winLeft+self.width)
+	
+	def displayFiles(self, bList):
+		self.fileListWindow.clear()
+		
+		self.selected = []
+		
+		i = 0
+		for f in bList:
+			self.fileListWindow.addstr(i, 2, "[ ] ")
+			self.fileListWindow.addnstr(f, self.fieldsSize.nameField)
+			i = i + 1
+		
+		self.listLength = len(bList)
+		
+		self.goTop()
+	
+	def goReset(self):
+		for i in range(0,self.listLength):
+			self.setStateChar(i, False)
+		
+	def goCheck(self, index):
+		if self.listLength==0:
+			return False
+		if index < 0:
+			return False
+		if index >= self.listLength:
+			return False
+		self.goCheckScrolling(index)
+		return True
+	
+	def goCheckScrolling(self, cursor):
+		if cursor > (self.currentFileWinPos + (self.winEnd - self.winStart)):
+			self.currentFileWinPos += 1
+		elif cursor < self.currentFileWinPos:
+			self.currentFileWinPos -= 1
+		
+	def goTop(self):
+		self.goReset()
+		self.currentFileWinPos = 0
+		if not self.goCheck(0):
+			return
+		self.currentCursor = 0
+		self.setStateChar(self.currentCursor, True)
+		
+	def goDown(self):
+		if not self.goCheck(self.currentCursor+1):
+			return
+		self.goReset()
+		self.currentCursor += 1
+		self.setStateChar(self.currentCursor, True)
+		
+	def goUp(self):
+		if not self.goCheck(self.currentCursor-1):
+			return
+		self.goReset()
+		self.currentCursor -= 1
+		self.setStateChar(self.currentCursor, True)
+	
+	def select(self):
+		if self.currentCursor in self.selected:
+			self.selected.remove(self.currentCursor)
+			self.setStateChar(self.currentCursor, True)
+		else:
+			self.selected.append(self.currentCursor)
+			self.setStateChar(self.currentCursor, False)
+	
+	def unselectAll(self):
+		cp = self.selected
+		self.selected = []
+		for i in cp:
+			self.setStateChar(i, i==self.currentCursor)
+	
+	def hideCursor(self):
+		self.setStateChar(self.currentCursor, False)
+
+	def showCursor(self):
+		self.setStateChar(self.currentCursor, True)
+		
+	def setStateChar(self, index, coming):
+		if coming:
+			self.fileListWindow.addstr(index, 3, "*")
+		else:
+			if index in self.selected:
+				self.fileListWindow.addstr(index, 3, "x")
+			else:
+				self.fileListWindow.addstr(index, 3, " ")
+		
+	def getSize(self, nBytes):
+		for x in ['bytes','KB','MB','GB','TB']:
+			if nBytes < 1024.0:
+				return "%3.1f %s" % (nBytes, x)
+			nBytes /= 1024.0
+	
+	def getTime(self, mtime):
+		return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+		
+		
