@@ -210,4 +210,3 @@ class Display2:
 		if self.stdscr==None:
 			return
 		
-

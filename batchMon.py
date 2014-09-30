@@ -19,7 +19,7 @@ __date__ = '2014-05-15'
 __updated__ = '2014-05-19'
 
 from batchTool import Display2, Monitor
-from batchTool.config import BatchToolExceptions as BatchToolException
+from batchTool import BatchToolExceptions as BatchToolException
 try:
 	from argparse import ArgumentParser, RawDescriptionHelpFormatter
 except ImportError:

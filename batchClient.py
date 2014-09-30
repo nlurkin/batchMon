@@ -4,8 +4,7 @@ xxx
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from batchServer import jobServer
-from batchTool.xxx import DisplayClient
+from batchTool import DisplayClient
 import Pyro4
 import curses
 import select
@@ -42,6 +41,8 @@ def mainLoop():
                 client.displayBatchList(l)
             elif ret== +1:
                 registerClient(name)
+            elif ret==-100:
+                server.removeBatch(name)
             elif ret==+100:
                 server.resubmitFailed(name)
             elif ret==+101:
@@ -87,28 +88,25 @@ def argParser():
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
                     help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
-    parser.add_argument('-t', '--test', action='store_true', 
-                    help="Test the existence of output files. Do not regenerate jobs for which the output file already exists (non-tested feature)")
+    parser.add_argument('-t', '--test', action='store_true', default="true",
+                        help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
-    parser.add_argument('-x', '--nocurse', action='store_true', 
-                    help="Disable the curse interface")
+    #parser.add_argument('-x', '--nocurse', action='store_true', 
+    #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
-    groupNew.add_argument("-l", "--load", action="store",
+    groupNew.add_argument("-l", "--load", action="store_true",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
     
     server = Pyro4.Proxy("PYRONAME:castor.jobServer")
     
-    #if args.config:
-        #mon.newBatch(args.config, args.name, args.queue, args.test)
-    #elif args.load:
-        #mon.loadBatch(args.load)
-    #    pass
+    if args.config:
+        server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
 
     if args.nocurse:
         mainInit()
