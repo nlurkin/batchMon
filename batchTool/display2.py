@@ -44,7 +44,7 @@ class Display2:
 		if self.stdscr == None:
 			return
 		try:
-			return self.stdscr.getkey()
+			return self.stdscr.getch()
 		except curses.error:
 			return -1
 		

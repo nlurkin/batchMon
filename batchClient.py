@@ -32,7 +32,7 @@ def mainLoop():
                      
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
-                    
+            
             ret,name = client.mainLoop()
             
             if ret==-1:
@@ -43,6 +43,8 @@ def mainLoop():
                 registerClient(name)
             elif ret==-100:
                 server.removeBatch(name)
+                l = server.getBatchList()
+                client.displayBatchList(l)
             elif ret==+100:
                 server.resubmitFailed(name)
             elif ret==+101:

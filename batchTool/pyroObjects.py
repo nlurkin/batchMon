@@ -126,7 +126,6 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
-            print k
             if self.screen.displayList:
                 if k == curses.KEY_DOWN:
                     self.screen.batchList.goDown()
@@ -134,8 +133,8 @@ class DisplayClient(object):
                     self.screen.batchList.goUp()
                 if k == curses.KEY_RIGHT:
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
-                if k == curses.KEY_DL:
-                    return -100, self.selectBatch(self.screen.batchList.currentCursor)
+                if k == curses.KEY_DC:
+                    return -100, self.batchList[self.screen.batchList.currentCursor]
             else:
                 if k == curses.KEY_LEFT:
                     return -1, self.disconnectBatch()
