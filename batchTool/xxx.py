@@ -42,9 +42,9 @@ class DisplayClient(object):
                     self.screen.batchList.goUp()
                 if k == curses.KEY_RIGHT:
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
+            else:
                 if k == curses.KEY_LEFT:
                     return -1, self.disconnectBatch()
-            else:
                 if curses.unctrl(k) == "^R":
                     return +100, self.batchName
                 if curses.unctrl(k) == "^G":

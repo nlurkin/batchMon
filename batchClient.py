@@ -106,8 +106,6 @@ def argParser():
     
     #if args.config:
         #mon.newBatch(args.config, args.name, args.queue, args.test)
-    server.addBatch("testConfig", "xxx", "1nh", True, False)
-    server.addBatch("testConfig", "xxx2", "1nh", True, False)
     #elif args.load:
         #mon.loadBatch(args.load)
     #    pass

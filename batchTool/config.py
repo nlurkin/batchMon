@@ -114,7 +114,6 @@ fileList:
 %s
 > 
 """
-	jobsList = []
 	
 	def __init__(self):
 		self.startTime = time.time()
@@ -143,6 +142,8 @@ fileList:
 		
 		self.finalJob = None
 		self.finalizeStage = -1
+		
+		self.jobsList = []
 
 	
 	def initCardFile(self, cardFile, name, queue, test=False):
