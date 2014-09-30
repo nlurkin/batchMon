@@ -92,8 +92,8 @@ def argParser():
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
-    #parser.add_argument('-x', '--nocurse', action='store_true', 
-    #                help="Disable the curse interface")
+    parser.add_argument('-x', '--nocurse', action='store_true', 
+                    help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
     groupNew = parser.add_mutually_exclusive_group(required=False)
