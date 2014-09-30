@@ -104,8 +104,13 @@ def argParser():
     groupNew.add_argument("-l", "--load", action="store_true",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
-    
-    server = Pyro4.Proxy("PYRONAME:castor.jobServer")
+
+    with open("ns.cfg", "r") as f:
+	     ip = f.readline()
+    print ip
+    nameserver = Pyro4.naming.locateNS(host=ip)
+    uri = nameserver.lookup("castor.jobServer")
+    server = Pyro4.Proxy(uri)
     
     if args.config:
         server.addBatch(args.config, args.name, args.queue, args.test, args.keep)

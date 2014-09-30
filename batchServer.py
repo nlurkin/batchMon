@@ -69,6 +69,8 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
+    with open("ns.cfg", "w") as f:
+        f.write(my_ip)
 
 #Starting batch server and associated pyro daemon
 def createServer():
