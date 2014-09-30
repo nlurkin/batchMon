@@ -105,7 +105,7 @@ def argParser():
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
-    with open("ns.cfg", "r") as f:
+    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
 	     ip = f.readline()
     print ip
     nameserver = Pyro4.naming.locateNS(host=ip)
