@@ -45,6 +45,10 @@ def mainLoop():
                 server.removeBatch(name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
+            elif ret==-101:
+                server.disconnectClient(name, serveruri)
+                server.stop()
+                break
             elif ret==+100:
                 server.resubmitFailed(name)
             elif ret==+101:

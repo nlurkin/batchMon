@@ -8,6 +8,7 @@ import curses
 import Pyro4
 from . import Monitor2, Display2
 
+stopAll = False
 class JobServer:
     '''
     xxx
@@ -92,7 +93,9 @@ class JobServer:
         
     def stop(self):
         global stopAll
+        print "Stopping server"
         stopAll = True
+#        raise KeyboardInterrupt
 
 class DisplayClient(object):
     """
@@ -126,21 +129,23 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
+            if curses.unctrl(k) == "K":
+					return -101, ""
             if self.screen.displayList:
                 if k == curses.KEY_DOWN:
                     self.screen.batchList.goDown()
-                if k == curses.KEY_UP:
+                elif k == curses.KEY_UP:
                     self.screen.batchList.goUp()
-                if k == curses.KEY_RIGHT:
+                elif k == curses.KEY_RIGHT:
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
-                if k == curses.KEY_DC:
+                elif k == curses.KEY_DC:
                     return -100, self.batchList[self.screen.batchList.currentCursor]
             else:
                 if k == curses.KEY_LEFT:
                     return -1, self.disconnectBatch()
-                if curses.unctrl(k) == "^R":
+                elif curses.unctrl(k) == "^R":
                     return +100, self.batchName
-                if curses.unctrl(k) == "^G":
+                elif curses.unctrl(k) == "^G":
                     return +101, self.batchName
                 
         

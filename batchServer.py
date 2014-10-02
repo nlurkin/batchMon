@@ -9,15 +9,15 @@ import Pyro4
 import select
 import socket
 from batchTool import JobServer
+from batchTool import pyroObjects
 
 nsDaemon = None
 pyroDaemon = None
 broadCastServer = None
 bServer = None
-stopAll = False
 
 def mainLoop():
-    global nsDaemon, broadCastServer, pyroDaemon, bServer, stopAll
+    global nsDaemon, broadCastServer, pyroDaemon, bServer
     while True:
         try:
             # create sets of the socket objects we will be waiting on
@@ -43,9 +43,10 @@ def mainLoop():
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
             bServer.mainLoop()
-            if stopAll:
+            if pyroObjects.stopAll:
                 break
         except KeyboardInterrupt:
+            print "Catching the interrupt"
             break
         except Pyro4.errors.CommunicationError as e:
             print e
