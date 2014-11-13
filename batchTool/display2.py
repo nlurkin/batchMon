@@ -75,6 +75,7 @@ class Display2:
 	
 	def repaint(self):
 		if self.displayList:
+			self.headerWindow.nooutrefresh()
 			self.batchList.repaint()
 		else:
 			self.headerWindow.nooutrefresh()
@@ -110,7 +111,24 @@ class Display2:
 		self.headerWindow.addstr(4,0, "Monitor {0} (saved in {0}.json) on queue {1}".format(headers["name"], headers["queue"]))
 		self.headerWindow.addstr(5,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
 												headers["jobNumber"], headers["cardFile"], headers["maxAttempts"]))
-
+	
+	def displayMainHeader(self):
+		if self.stdscr == None:
+			return
+		self.headerWindow.addstr(0,50, "LXBATCH job monitoring")
+		self.headerWindow.move(0,0)
+		self.headerWindow.chgat(curses.color_pair(1))
+		self.headerWindow.addstr(1,0, "|",curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" K: Kill server " ,curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" RIGHT: Details of selected job " ,curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" UP/DOWN: Navigate jobs ",curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" DEL: Remove batch ",curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.chgat(curses.color_pair(1))
+		
 	def displayTime(self, startTime):
 		if self.stdscr == None:
 			return
@@ -204,9 +222,12 @@ class Display2:
 
 	def displayBatchList(self, l):
 		self.stdscr.clear()
+		self.stdscr.refresh()
 		self.displayList = True
+		self.displayMainHeader()
 		self.batchList = FileDisplay(5, 30, 0, 150)
 		self.batchList.displayFiles(l)
+		#self.repaint()
 		
 	def reset(self):
 		self.displayList = False

@@ -39,9 +39,9 @@ def mainLoop():
                 server.disconnectClient(name, serveruri)
                 l = server.getBatchList()
                 client.displayBatchList(l)
-            elif ret== +1:
+            elif ret== +1 and name!=None:
                 registerClient(name)
-            elif ret==-100:
+            elif ret==-100 and name!=None:
                 server.removeBatch(name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
@@ -109,8 +109,9 @@ def argParser():
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
-    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
-	     ip = f.readline()
+    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
+    with open("ns.cfg", "r") as f:
+        ip = f.readline()
     print ip
     nameserver = Pyro4.naming.locateNS(host=ip)
     uri = nameserver.lookup("castor.jobServer")
