@@ -71,7 +71,7 @@ class JobServer:
             self.listBatch[name]["monitor"].reSubmitFailed()
     
     def mainLoop(self):
-        for _,batch in self.listBatch.iteritems():
+        for _,batch in self.listBatch.items():
             batch["monitor"].monitor()
             
             for clients in batch["clients"]:
