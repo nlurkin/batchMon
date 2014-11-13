@@ -98,10 +98,12 @@ def argParser():
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
-    parser.add_argument('-x', '--nocurse', action='store_true', 
-                    help="Disable the curse interface")
+    #parser.add_argument('-x', '--nocurse', action='store_true', 
+    #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
+    parser.add_argument('-s', '--submit', action='store_true',
+                    help="Submit only and exit")
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
@@ -109,8 +111,8 @@ def argParser():
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
-    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
-    with open("ns.cfg", "r") as f:
+    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
+    #with open("ns.cfg", "r") as f:
         ip = f.readline()
     print ip
     nameserver = Pyro4.naming.locateNS(host=ip)
@@ -119,11 +121,15 @@ def argParser():
     
     if args.config:
         server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
-
-    if args.nocurse:
-        mainInit()
-    else:
-        curses.wrapper(mainInit)
+    
+    if args.submit:
+        server.submitInit(args.name)
+        return 
+    
+    #if args.nocurse:
+    #    mainInit()
+    #else:
+    curses.wrapper(mainInit)
 
 if __name__ == "__main__":
     sys.exit(argParser())

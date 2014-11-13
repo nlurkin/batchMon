@@ -74,6 +74,8 @@ class Display2:
 			self.repaint()
 	
 	def repaint(self):
+		if self.stdscr==None:
+			return
 		if self.displayList:
 			self.headerWindow.nooutrefresh()
 			self.batchList.repaint()
@@ -101,12 +103,14 @@ class Display2:
 		self.headerWindow.addstr(1,0, "|",curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.addstr(" CTRL-G: Generate jobs " ,curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-		self.headerWindow.addstr(" CTRL-T: Modify refresh rate " ,curses.color_pair(1))
-		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		#self.headerWindow.addstr(" CTRL-T: Modify refresh rate " ,curses.color_pair(1))
+		#self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.addstr(" CTRL-R: Reset failed jobs ",curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-		self.headerWindow.addstr(" CTRL-C: Save and quit ",curses.color_pair(1))
+		self.headerWindow.addstr(" LEFT: Return to batch menu ",curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		#self.headerWindow.addstr(" CTRL-C: Save and quit ",curses.color_pair(1))
+		#self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.chgat(curses.color_pair(1))
 		self.headerWindow.addstr(4,0, "Monitor {0} (saved in {0}.json) on queue {1}".format(headers["name"], headers["queue"]))
 		self.headerWindow.addstr(5,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
@@ -221,6 +225,8 @@ class Display2:
 		self.erroWindow.addstr(0, 0, strerr)
 
 	def displayBatchList(self, l):
+		if self.stdscr==None:
+			return
 		self.stdscr.clear()
 		self.stdscr.refresh()
 		self.displayList = True
