@@ -115,3 +115,6 @@ class Monitor2:
             if m:
                 self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
         
+    def invertKeepOutput(self):
+        self.keepOutput = not self.keepOutput
+        

@@ -36,7 +36,9 @@ class JobServer:
         if name in self.listBatch:
             client = Pyro4.Proxy(clientUri)
             self.listBatch[name]["clients"].append(client)
-            return self.listBatch[name]["monitor"].config.startTime, self.listBatch[name]["monitor"].config.getHeaders()
+            header = self.listBatch[name]["monitor"].config.getHeaders()
+            header['keep'] = self.listBatch[name]["monitor"].keepOutput
+            return self.listBatch[name]["monitor"].config.startTime, header
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
@@ -69,6 +71,14 @@ class JobServer:
         print "resubmiting failed batch"
         if name in self.listBatch:
             self.listBatch[name]["monitor"].reSubmitFailed()
+    
+    def invertKeepOutput(self, name):
+        print "Invert keep output"
+        if name in self.listBatch:
+            self.listBatch[name]["monitor"].invertKeepOutput()
+            header = self.listBatch[name]["monitor"].config.getHeaders()
+            header['keep'] = self.listBatch[name]["monitor"].keepOutput
+            return header
     
     def mainLoop(self):
         for _,batch in self.listBatch.items():
@@ -147,6 +157,9 @@ class DisplayClient(object):
                     return +100, self.batchName
                 elif curses.unctrl(k) == "^G":
                     return +101, self.batchName
+                elif curses.unctrl(k) == "^K":
+                    return +102, self.batchName
+                 
                 
         
         return 0,""
@@ -170,7 +183,8 @@ class DisplayClient(object):
         return batch
     
     def displayHeader(self, headers):
-        self.screen.displayHeader(headers)
+        if headers!=None:
+            self.screen.displayHeader(headers)
     
     def displayBatchList(self, l):
         self.batchList = l[:]

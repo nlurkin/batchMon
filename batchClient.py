@@ -56,6 +56,9 @@ def mainLoop():
                 server.resubmitFailed(name)
             elif ret==+101:
                 server.submitInit(name)
+            elif ret==+102:
+                header = server.invertKeepOutput(name)
+                client.displayHeader(header)
             
 
         except KeyboardInterrupt:
@@ -115,7 +118,7 @@ def argParser():
     args = parser.parse_args()
 
     #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
-    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
+    with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
         ip = f.readline()
     print ip
     nameserver = Pyro4.naming.locateNS(host=ip)
