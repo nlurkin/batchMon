@@ -89,6 +89,10 @@ class Monitor2:
     
     def checkFinalize(self):
         if self.config.finalizeStage==0:
+            if self.config.finalJob==None:
+                self.config.finalizeStage=2
+                return True
+            
             cmd = ["bsub -q " + self.config.queue]
             if self.config.requirement:
                 cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
