@@ -4,12 +4,15 @@ xxx
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from batchTool import DisplayClient
-import Pyro4
 import curses
-import select
+import os
 import socket
 import sys
+
+import Pyro4
+from batchTool import DisplayClient
+import select
+
 
 server = None
 serveruri = ""
@@ -111,8 +114,8 @@ def argParser():
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
-    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
-    #with open("ns.cfg", "r") as f:
+    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
         ip = f.readline()
     print ip
     nameserver = Pyro4.naming.locateNS(host=ip)

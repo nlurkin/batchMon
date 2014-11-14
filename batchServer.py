@@ -5,11 +5,14 @@ Created on 27 Sep 2014
 
 @author: Nicolas
 '''
-import Pyro4
-import select
+import os
 import socket
+
+import Pyro4
 from batchTool import JobServer
 from batchTool import pyroObjects
+import select
+
 
 nsDaemon = None
 pyroDaemon = None
@@ -70,8 +73,8 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "w") as f:
-    #with open("ns.cfg", "w") as f:
+    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "w") as f:
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
         f.write(my_ip)
 
 #Starting batch server and associated pyro daemon

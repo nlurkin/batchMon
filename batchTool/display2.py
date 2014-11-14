@@ -111,6 +111,7 @@ class Display2:
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		#self.headerWindow.addstr(" CTRL-C: Save and quit ",curses.color_pair(1))
 		#self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr("                        ",curses.color_pair(1))
 		self.headerWindow.chgat(curses.color_pair(1))
 		self.headerWindow.addstr(4,0, "Monitor {0} (saved in {0}.json) on queue {1}".format(headers["name"], headers["queue"]))
 		self.headerWindow.addstr(5,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
