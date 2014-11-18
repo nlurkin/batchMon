@@ -7,6 +7,7 @@ Created on 27 Sep 2014
 '''
 import os
 import socket
+import sys
 
 import Pyro4
 from batchTool import JobServer
@@ -54,6 +55,9 @@ def mainLoop():
         except Pyro4.errors.CommunicationError as e:
             print e
             bServer.disconnectAllClients()
+        except Exception, e:
+            print "Unexpected error:", e.__doc__
+            print e.message
                 
     
     nsDaemon.close()

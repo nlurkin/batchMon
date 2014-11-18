@@ -126,7 +126,7 @@ def argParser():
     server = Pyro4.Proxy(uri)
     
     if args.config:
-        server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
+        server.addBatch(os.getcwd()+"/"+args.config, args.name, args.queue, args.test, args.keep)
     
     if args.submit:
         server.submitInit(args.name)

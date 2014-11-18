@@ -97,6 +97,7 @@ class Display2:
 	def displayHeader(self, headers):
 		if self.stdscr == None:
 			return
+		self.headerWindow.clear()
 		self.headerWindow.addstr(0,50, "LXBATCH job monitoring")
 		self.headerWindow.move(0,0)
 		self.headerWindow.chgat(curses.color_pair(1))
@@ -119,6 +120,7 @@ class Display2:
 	def displayMainHeader(self):
 		if self.stdscr == None:
 			return
+		self.headerWindow.clear()
 		self.headerWindow.addstr(0,50, "LXBATCH job monitoring")
 		self.headerWindow.move(0,0)
 		self.headerWindow.chgat(curses.color_pair(1))
