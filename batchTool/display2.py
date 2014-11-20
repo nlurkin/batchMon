@@ -19,9 +19,6 @@ class Display2:
 		debugBlock = 50
 		finalizeBlock = 20
 
-	submitTotal = 0
-	submitCurrent = 0
-	
 	submitIndex = (0,0)
 	submitMaxIndex = (4,5)
 	
@@ -39,6 +36,9 @@ class Display2:
 		'''
 		self.stdscr = None
 		self.displayList = False
+		self.submitTotal = 0
+		self.submitCurrent = 0
+
 	
 	def getch(self):
 		if self.stdscr == None:

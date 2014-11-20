@@ -45,7 +45,7 @@ class JobServer:
             header = self.listBatch[name]["monitor"].config.getHeaders()
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
             self.mutex.release()
-            return self.listBatch[name]["monitor"].config.startTime, header
+            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList)
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
@@ -217,3 +217,6 @@ class DisplayClient(object):
     
     def getName(self):
         return self.batchName
+    
+    def setTotalJobs(self, total):
+        self.screen.submitTotal = total

@@ -69,10 +69,11 @@ def mainLoop():
 
 def registerClient(name):
     global client, serveruri
-    startTime, headers = server.registerClient(name, serveruri)
+    startTime, headers, totalJobs = server.registerClient(name, serveruri)
     
     client.setStartTime(startTime)
     client.displayHeader(headers)
+    client.setTotalJobs(totalJobs)
     
 def mainInit(scr=None):
     global pyroDaemon, serveruri, client, server
