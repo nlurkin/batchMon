@@ -91,7 +91,9 @@ class JobServer:
     
     def mainLoop(self):
         for _,batch in self.listBatch.items():
-            batch["monitor"].monitor()
+            tMon = threading.Thread(target=batch["monitor"].monitor)
+            tMon.daemon = True
+            tMon.start()
             
             for clients in batch["clients"]:
                 clients.displaySummary(batch["monitor"].config.getStatusStats())
