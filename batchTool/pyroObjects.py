@@ -106,22 +106,15 @@ class JobServer:
                 t = threading.Thread(target=self.submitLoop, args=(batch,))
                 t.daemon = True
                 t.start()
-                #self.submitLoop(batch)
 
     def submitLoop(self, batch):
         try:
             batch["monitor"].submitting = False
-            for job in batch["monitor"].generateJobs():
-                        print "submitting"
+            for i, job in enumerate(batch["monitor"].generateJobs()):
                         batch["monitor"].submit(job)
-                        print len(batch["clients"])
                         if self.mutex.acquire():
-                            time.sleep(5)
                             for clients in batch["clients"]:
-                                print "clients display"
-                                print clients
-                                clients.displayJobSent(job.jobID, job.index)
-                                print "end display"
+                                clients.displayJobSent(job.jobID, job.index, i)
                             self.mutex.release()
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
@@ -130,7 +123,6 @@ class JobServer:
         global stopAll
         print "Stopping server"
         stopAll = True
-#        raise KeyboardInterrupt
 
 class DisplayClient(object):
     """
@@ -149,8 +141,8 @@ class DisplayClient(object):
     def updateStartTime(self):
         self.screen.displayTime(self.startTime)
     
-    def displayJobSent(self, jobId, jobIndex):
-        self.screen.displaySubmit(jobId, jobIndex)
+    def displayJobSent(self, jobId, jobIndex, currentID):
+        self.screen.displaySubmit(jobId, jobIndex, currentID)
     
     def displaySummary(self, stats):
         self.screen.displaySummary(stats)

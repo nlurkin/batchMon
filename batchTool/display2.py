@@ -173,13 +173,13 @@ class Display2:
 			self.jobsWindow.addstr(1+i,5,"Permanent:".format(aNumber))
 			self.jobsWindow.addstr(1+i,65,str(stats["failed"]["permanent"]))
 	
-	def displaySubmit(self, jobID, jobIndex):
+	def displaySubmit(self, jobID, jobIndex, currentID):
 		if self.stdscr == None:
 			return
-		self.submitCurrent += 1
-		progress = (1.0*self.submitCurrent/self.submitTotal)*100
+		#self.submitCurrent += 1
+		progress = (1.0*currentID/self.submitTotal)*100
 		
-		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(self.submitCurrent,self.submitTotal, "#" * int(progress)))
+		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID,self.submitTotal, "#" * int(progress)))
 		x,y = self.submitIndex
 		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
 		
