@@ -5,8 +5,12 @@ Created on Sep 30, 2014
 '''
 
 import curses
+import threading
+
 import Pyro4
+
 from . import Monitor2, Display2
+
 
 stopAll = False
 class JobServer:
@@ -94,12 +98,15 @@ class JobServer:
                 else:
                     for clients in batch["clients"]:
                         clients.resetSubmit(len(batch["monitor"].submitList))
-                for job in batch["monitor"].generateJobs():
+                t = threading.Thread(target=self.submitLoop, args=(batch))
+                t.start()
+                #self.submitLoop(batch)
+
+    def submitLoop(self, batch):
+        for job in batch["monitor"].generateJobs():
                     batch["monitor"].submit(job)
                     for clients in batch["clients"]:
                         clients.displayJobSent(job.jobID, job.index)
-
-
         
     def stop(self):
         global stopAll
