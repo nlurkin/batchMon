@@ -22,6 +22,7 @@ class Monitor2:
         self.submitReady = False
         self.keepOutput = False
         self.submitting = False
+        self.currentlyChecking = False
     
     def newBatch(self, cfgFile, batchName, queue, test):
         self.config.initCardFile(cfgFile, batchName, queue, test)
@@ -60,10 +61,13 @@ class Monitor2:
         self.submitReady = True
     
     def monitor(self):
-        if not self.checkFinalize():
-            self.monitorNormal()
-        else:
-            self.monitorFinal()
+        if not self.currentlyChecking:
+            self.currentlyChecking = True
+            if not self.checkFinalize():
+                self.monitorNormal()
+            else:
+                self.monitorFinal()
+            self.currentlyChecking = False
     
     def monitorNormal(self):
         cmd = ["bjobs -a"]
