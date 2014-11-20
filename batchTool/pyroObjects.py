@@ -10,7 +10,7 @@ import threading
 import Pyro4
 
 from . import Monitor2, Display2
-
+import time
 
 stopAll = False
 class JobServer:
@@ -20,6 +20,7 @@ class JobServer:
     
     def __init__(self):
         self.listBatch = {}
+        self.mutex = threading.Lock()
     
     def addBatch(self, cardFile, name, queue, test, keep):
         print "adding new batch"
@@ -38,19 +39,23 @@ class JobServer:
     def registerClient(self, name, clientUri):
         print "registering new client"
         if name in self.listBatch:
+            self.mutex.acquire()
             client = Pyro4.Proxy(clientUri)
             self.listBatch[name]["clients"].append(client)
             header = self.listBatch[name]["monitor"].config.getHeaders()
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
+            self.mutex.release()
             return self.listBatch[name]["monitor"].config.startTime, header
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
         if name in self.listBatch:
+            self.mutex.acquire()
             for client in self.listBatch[name]["clients"]:
                 if client._pyroUri == clientUri:
                     client._pyroRelease()
                     self.listBatch[name]["clients"].remove(client)
+            self.mutex.release()
     
     def disconnectAllClients(self):
         print "Disconnecting all clients"
@@ -91,22 +96,35 @@ class JobServer:
             for clients in batch["clients"]:
                 clients.displaySummary(batch["monitor"].config.getStatusStats())
                 
-            if batch["monitor"].submitReady:
+            if batch["monitor"].submitReady and batch["monitor"].submitting==False:
                 if len(batch["monitor"].submitList)==0:
                     for clients in batch["clients"]:
                         clients.resetSubmit(batch["monitor"].config.getJobsNumberReady())
                 else:
                     for clients in batch["clients"]:
                         clients.resetSubmit(len(batch["monitor"].submitList))
-                t = threading.Thread(target=self.submitLoop, args=(batch))
+                t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t.daemon = True
                 t.start()
                 #self.submitLoop(batch)
 
     def submitLoop(self, batch):
-        for job in batch["monitor"].generateJobs():
-                    batch["monitor"].submit(job)
-                    for clients in batch["clients"]:
-                        clients.displayJobSent(job.jobID, job.index)
+        try:
+            batch["monitor"].submitting = False
+            for job in batch["monitor"].generateJobs():
+                        print "submitting"
+                        batch["monitor"].submit(job)
+                        print len(batch["clients"])
+                        if self.mutex.acquire():
+                            time.sleep(5)
+                            for clients in batch["clients"]:
+                                print "clients display"
+                                print clients
+                                clients.displayJobSent(job.jobID, job.index)
+                                print "end display"
+                            self.mutex.release()
+        except Exception:
+            print "".join(Pyro4.util.getPyroTraceback())
         
     def stop(self):
         global stopAll

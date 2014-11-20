@@ -21,6 +21,7 @@ class Monitor2:
         self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
+        self.submitting = False
     
     def newBatch(self, cfgFile, batchName, queue, test):
         self.config.initCardFile(cfgFile, batchName, queue, test)
@@ -44,6 +45,7 @@ class Monitor2:
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
     
     def generateJobs(self):
+        self.submitting = True
         if len(self.submitList)==0:
             subList = [job for job in self.config.jobsList if job.attempts==-1]
         else:
