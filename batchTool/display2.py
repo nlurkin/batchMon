@@ -19,7 +19,6 @@ class Display2:
 		debugBlock = 50
 		finalizeBlock = 20
 
-	submitIndex = (0,0)
 	submitMaxIndex = (4,5)
 	
 	currentDelay = 2
@@ -38,6 +37,7 @@ class Display2:
 		self.displayList = False
 		self.submitTotal = 0
 		self.submitCurrent = 0
+		self.submitIndex = (0,0)
 
 	
 	def getch(self):

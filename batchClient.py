@@ -128,7 +128,9 @@ def argParser():
     
     if args.config:
         try:
-            server.addBatch(os.getcwd()+"/"+args.config, args.name, args.queue, args.test, args.keep)
+            if not os.path.isabs(args.config):
+               args.config = os.getcwd()+"/"+args.config
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
     

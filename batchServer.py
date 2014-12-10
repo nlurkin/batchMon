@@ -20,6 +20,33 @@ pyroDaemon = None
 broadCastServer = None
 bServer = None
 
+def trace_calls(frame, event, arg):
+    if event != 'call':
+        return
+    co = frame.f_code
+    func_name = co.co_name
+    func_filename = co.co_filename
+    if "Python" in func_filename:
+        #ignore python calls
+        return
+    if "Pyro4" in func_filename:
+        #ignore Pyro calls
+        return
+    if "serpent" in func_filename:
+        #ignore Pyro calls
+        return
+    if func_name == 'write':
+        # Ignore write() calls from print statements
+        return
+    func_line_no = frame.f_lineno
+    caller = frame.f_back
+    caller_line_no = caller.f_lineno
+    caller_filename = caller.f_code.co_filename
+    print 'Call to %s on line %s of %s from line %s of %s' % \
+        (func_name, func_line_no, func_filename,
+         caller_line_no, caller_filename)
+    return
+
 def mainLoop():
     global nsDaemon, broadCastServer, pyroDaemon, bServer
     while True:
@@ -110,5 +137,7 @@ def main():
     mainLoop()
 
 if __name__=="__main__":
+    if len(sys.argv)>1:
+        sys.settrace(trace_calls)
     main()
     
