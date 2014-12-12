@@ -74,6 +74,7 @@ class JobServer:
     def submitInit(self, name):
         print "Init submiting batch"
         if name in self.listBatch:
+            print "Request Submit batch name"
             self.listBatch[name]["monitor"].submitInit()
     
     def resubmitFailed(self, name):
@@ -90,6 +91,7 @@ class JobServer:
             return header
     
     def mainLoop(self):
+        print "Mainloop"
         for _,batch in self.listBatch.items():
             tMon = threading.Thread(target=batch["monitor"].monitor)
             tMon.daemon = True
@@ -97,7 +99,9 @@ class JobServer:
             
             for clients in batch["clients"]:
                 clients.displaySummary(batch["monitor"].config.getStatusStats())
-                
+            
+            print "Submit ready " + str(batch["monitor"].submitReady)
+            print "Submitting " + str(batch["monitor"].submitting) 
             if batch["monitor"].submitReady and batch["monitor"].submitting==False:
                 if len(batch["monitor"].submitList)==0:
                     for clients in batch["clients"]:
@@ -110,6 +114,7 @@ class JobServer:
                 t.start()
 
     def submitLoop(self, batch):
+        print "Enter submit loop"
         try:
             batch["monitor"].submitting = False
             for i, job in enumerate(batch["monitor"].generateJobs()):
