@@ -1,6 +1,6 @@
 executable = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/test.sh
 listFile = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/testList.list
-outputDir = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/outputTest
+outputDir = /eos/user/n/nlurkin/outputTest
 maxJobs = 5
 outputFile = job_test$jobIndex.root
 maxAttempts=1
@@ -11,4 +11,4 @@ preExecute = source ~/env.sh
 
 postExecute = ls
 	pwd
-	mv $outputFile $outputDir/$outputFile
+	xrdcp $outputFile root://eosna62.cern.ch//$outputDir/$outputFile

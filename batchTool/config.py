@@ -8,7 +8,7 @@ import json
 import os
 import shutil
 import time
-from batchTool.FS import FSSelector
+import FSSelector
 
 class BatchToolExceptions:
 	'''
