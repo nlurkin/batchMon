@@ -11,4 +11,4 @@ preExecute = source ~/env.sh
 
 postExecute = ls
 	pwd
-	xrdcp $outputFile root://eosna62.cern.ch//$outputDir/$outputFile
+	xrdcp $outputFile xroot://eosna62.cern.ch//$outputDir/$outputFile
