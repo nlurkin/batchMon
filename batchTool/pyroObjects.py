@@ -117,7 +117,9 @@ class JobServer:
         print "Enter submit loop"
         try:
             batch["monitor"].submitting = False
+            print "Number of ready jobs " + str(batch["monitor"].config.getJobsNumberReady())
             for i, job in enumerate(batch["monitor"].generateJobs()):
+                        print "Generate job " + str(i)
                         batch["monitor"].submit(job)
                         if self.mutex.acquire():
                             for clients in batch["clients"]:
