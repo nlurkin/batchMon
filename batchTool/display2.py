@@ -139,7 +139,7 @@ class Display2:
 		if self.stdscr == None:
 			return
 		td = datetime.datetime.now()-datetime.datetime.fromtimestamp(startTime)
-		self.headerWindow.addstr(6,0, "Running since {0} ({1})      ".format(
+		self.headerWindow.addstr(6,0, "Running since {0} ({1})	  ".format(
 													datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S'), 
 													str(td)))
 
@@ -223,8 +223,8 @@ class Display2:
 		self.headerWindow.move(2, 0)
 		self.headerWindow.clrtoeol()
 
-    def setError(self, strerr):
-        self.erroWindow.addstr(0, 0, strerr)
+	def setError(self, strerr):
+		self.erroWindow.addstr(0, 0, strerr)
 
 	def displayBatchList(self, l):
 		if self.stdscr==None:
@@ -255,14 +255,14 @@ class Display2:
 		
 
 class FileDisplay(object):
-    '''
-    classdocs
-    '''
-    
-    class fieldsSize:
-        nameField = 50
-        sizeField = 20
-        timeField = 20
+	'''
+	classdocs
+	'''
+	
+	class fieldsSize:
+		nameField = 50
+		sizeField = 20
+		timeField = 20
 
 	def __init__(self, start, end, leftCorner, width):
 		'''
@@ -377,4 +377,3 @@ class FileDisplay(object):
 	
 	def getTime(self, mtime):
 		return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
-
