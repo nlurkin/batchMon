@@ -8,8 +8,13 @@ import json
 import os
 import shutil
 import time
+import FSSelector
 
 class BatchToolExceptions:
+	'''
+	Exceptions from BatchTool
+	'''
+	
 	class BadCardFileException(Exception):
 		'''Unable to parse correctly card file.'''
 		pass
@@ -20,8 +25,11 @@ class BatchToolExceptions:
 		'''Generic error message'''
 		def __init__(self, text):
 			self.strerror = text
-	
+
 def encode_dict(obj):
+	'''
+	Encode a dictionary for json 
+	'''
 	if isinstance(obj, BatchJob) or isinstance(obj,finalBatchJob):
 		return obj.__dict__
 	return obj
@@ -42,6 +50,10 @@ class BatchJob:
 		self.jobSeq = seq
 	
 	def update(self, dico):
+		'''
+		Update the job dictionnary
+		'''
+		
 		if "inputFile" in dico:
 			self.inputFile = dico["inputFile"]
 		if "queue" in dico:
@@ -73,6 +85,10 @@ class finalBatchJob:
 		self.output = None
 	
 	def update(self, dico):
+		'''
+		Update the job dictionary
+		'''
+		
 		if "queue" in dico:
 			self.queue = dico["queue"]
 		if "jobID" in dico:
@@ -134,12 +150,17 @@ fileList:
 
 	
 	def initCardFile(self, cardFile, name, queue, test=False):
+		'''
+		Set the card file for the batch. Read it and generate the jobs.
+		'''
 		self.cardFile = cardFile
 		self.name = name
 		self.queue = queue
 		
 		self._readCardFile()
 
+		#Test requires to test the output files in the output directory
+		#Therefore needs to know what they are
 		if test:
 			if not self.outputDir and not self.outputFile:
 				raise BatchToolExceptions.BadOption("Unable to test outputs: outputDir or outputFile not specified")
@@ -149,6 +170,10 @@ fileList:
 		self._generateScript()
 	
 	def load(self, jsonFile):
+		'''
+		Load a json file for an existing batch
+		FIXME: Not working anymore in server
+		'''
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
 			xxx = finalBatchJob("")
@@ -160,10 +185,17 @@ fileList:
 				self.jobsList.append(j)
 	
 	def save(self, fileName):
+		'''
+		Save batch in json
+		FIXME: Not working anymore in server
+		'''
 		with open(fileName, "wb") as f:
 			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
 
 	def _buildSearchMap(self, index, fileName):
+		'''
+		Build map to replace all $-parameters
+		'''
 		dico = dict(self._templateDico)
 		dico["jobIndex"] = index
 		dico["fileName"] = fileName
@@ -172,30 +204,47 @@ fileList:
 		return dico
 	
 	def _testOutputFile(self, index):
+		'''
+		Test if the output file exist
+		'''
+		
+		#Output file is the outputDir + replaced template file name
 		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
-		if os.path.exists(path):
+		if FSSelector.exists(path):
 			return False
 		return True
 	
 	def _checkOutputDir(self):
-		if not os.path.exists(self.outputDir):
-			#os.mkdir(self.outputDir)
-			pass
+		'''
+		Check if the outputDir exists. If not, create it
+		'''
+		if not FSSelector.exists(self.outputDir):
+			FSSelector.mkDir(self.outputDir)
 		
 	def _readInputList(self, test):
+		'''
+		Read the input list file and create one job / entry (1 line = 1 entry)
+		'''
 		with open(self.listFile,'r') as f:
 			j = 0
 			for i,line in enumerate(f):
+				#If start index specified, skip the first startIndex files
 				if i>=self.startIndex:
+					#Always create the job if we don't test
+					#Else create only if output file does not exist
 					if (not test) or self._testOutputFile(i):
 						self.jobsList.append(BatchJob(line.strip('\n'), i, j))
 						j += 1
+				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
 		
 		self.jobNumber = len(self.jobsList)
 		
 	def _readCardFile(self):
+		'''
+		Read the card file and set the options
+		'''
 		cp = SimpleConfigParser.SimpleConfigParser()
 		cp.read(self.cardFile)
 		
@@ -240,9 +289,14 @@ fileList:
 
 
 	def _readAndReplace(self, string, searchMap):
+		'''
+		Read the string and replace every known $-parameter by its dictionary value
+		'''
+		
 		sReturn = ""
 		for line in string.splitlines():
 			replacedAll = False
+			#Dictionary value can also be a $-parameter so loop until no known $-parameter found
 			while not replacedAll:
 				replacedAll = True
 				for old in searchMap:
@@ -254,34 +308,55 @@ fileList:
 		return sReturn
 	
 	def _generateScript(self):
+		'''
+		Generate scripts for all jobs
+		'''
+		
 		sReturn = "#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		indexList = range(0,self.jobNumber)
 		for i in indexList:
+			#Generate the $-parameter dictionary
 			dico = self._buildSearchMap(self.jobsList[i].index, self.jobsList[i].inputFile)
+			#Apply the dictionary for the 3 parts of the script
 			pre = self._readAndReplace(self.preExecute, dico)
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
+			#Set the script
 			self.jobsList[i].script = sReturn % (pre, command, post)
+		#Create the final job script if exists
 		if len(indexList)>0 and self.finalJob:
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
 	
 	def __str__(self):
+		'''
+		String representation
+		'''
 		files = "" 
 		for job in self.jobsList:
 			files += str(job) + "\n"
 		return self._reprTemplate % (hex(id(self)), self.cardFile, self.jobNumber, self.preExecute, self.executable, self.optTemplate, self.postExecute, files)
 	
 	def parseFailReason(self, job):
+		'''
+		Parse the output to determine the reason of the failure and decide whether it is worth retsarting the job 
+		'''
 		#if false
 		#job["attempts"] = -2
 		return True
 	
 	def updateJob(self, jobID, dico, keep):
+		'''
+		Update job with the information in the dico
+		'''
 		reSubmit = False
 		seq = -1
+		
+		#Does this job exist
 		if jobID in self.jobCorrespondance:
+			#Get the job index and the job itself
 			jobSeq = self.jobCorrespondance[jobID]
 			job = self.jobsList[jobSeq]
+			
 			#test state change
 			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
 			if job.status!=dico["status"]:
@@ -303,14 +378,31 @@ fileList:
 		return (reSubmit,seq)
 	
 	def updateCorrespondance(self, jobID, jobSeq):
+		'''
+		Update the correspondance between jobID and jobSequence
+		jobID = id from lxbatch
+		jobSequence = index in the job array
+		'''
 		self.jobCorrespondance[jobID] = jobSeq
 	
 	def getJobSeq(self, jobID):
+		'''
+		Return the job sequence corresponding to the jobID. Or -1 if is not found.
+		'''
 		if jobID in self.jobCorrespondance:
 			return self.jobCorrespondance[jobID]
 		return -1
 
 	def getStatusStats(self):
+		'''
+		Return statistics about the batch: 
+			number attempts
+				Pending
+				Running
+				Exited
+				Unknown
+				Done 
+		'''
 		unknown = 0
 		pending = {"value": 0, "attempts":[0]*(self.maxAttempts+1)}
 		running = {"value": 0, "attempts":[0]*(self.maxAttempts+1)}
@@ -343,26 +435,40 @@ fileList:
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
 	
 	def getHeaders(self):
+		'''
+		Return the header info of the batch: number of jobs, cardfile, maximum number of attemps, name, queue
+		'''
 		return {"jobNumber":self.jobNumber, "cardFile":self.cardFile, "maxAttempts":self.maxAttempts, "name":self.name, "queue":self.queue}
 	
 	def resetFailed(self):
+		'''
+		Reset (enable) the failed jobs for which the maximum number of attemps have been reached (permanently failed)
+		'''
 		for job in self.jobsList:
 			if job.attempts==-2 or job.attempts==self.maxAttempts and job.status=="EXIT":
 				job.attempts=-1
 				job.status = None
 	
 	def enableNew(self):
+		'''
+		Enable jobs that are not yet running
+		'''
 		for job in self.jobsList:
 			if job.attempts==-2 and not job.status:
 				job.attempts=-1
 	
 	def getJobsNumberReady(self):
+		'''
+		Return the number of jobs ready to be submitted (enabled)
+		'''
 		return len([0 for job in self.jobsList if job.attempts==-1])
 	
 	def updateFinalJob(self, dico):
+		'''
+		Update the final job with the dictionary values
+		'''
 		if "status" in dico:
 			if dico["jobID"]==self.finalJob.jobID and self.finalJob.status!=dico["status"]:
-				print dico
 				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(self.finalJob.jobID)
 				if dico["status"]=="DONE":
 					#get output, save it and clean
@@ -384,4 +490,7 @@ fileList:
 			self.finalizeStage = 1
 	
 	def finalizeFinished(self):
+		'''
+		Is the final job finished
+		'''
 		return self.finalizeStage==2 or self.finalizeStage==-2

@@ -1,0 +1,14 @@
+executable = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/test.sh
+listFile = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/testList.list
+outputDir = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/outputTest
+maxJobs = 5
+outputFile = job_test$jobIndex.root
+maxAttempts=1
+
+optTemplate = $outputFile
+
+preExecute = source ~/env.sh
+
+postExecute = ls
+	pwd
+	mv $outputFile $outputDir/$outputFile
