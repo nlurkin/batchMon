@@ -19,10 +19,6 @@ class Display2:
 		debugBlock = 50
 		finalizeBlock = 20
 
-	submitTotal = 0
-	submitCurrent = 0
-	
-	submitIndex = (0,0)
 	submitMaxIndex = (4,5)
 	
 	currentDelay = 2
@@ -39,6 +35,10 @@ class Display2:
 		'''
 		self.stdscr = None
 		self.displayList = False
+		self.submitTotal = 0
+		self.submitCurrent = 0
+		self.submitIndex = (0,0)
+
 	
 	def getch(self):
 		if self.stdscr == None:
@@ -74,7 +74,10 @@ class Display2:
 			self.repaint()
 	
 	def repaint(self):
+		if self.stdscr==None:
+			return
 		if self.displayList:
+			self.headerWindow.nooutrefresh()
 			self.batchList.repaint()
 		else:
 			self.headerWindow.nooutrefresh()
@@ -94,23 +97,44 @@ class Display2:
 	def displayHeader(self, headers):
 		if self.stdscr == None:
 			return
+		self.headerWindow.clear()
 		self.headerWindow.addstr(0,50, "LXBATCH job monitoring")
 		self.headerWindow.move(0,0)
 		self.headerWindow.chgat(curses.color_pair(1))
 		self.headerWindow.addstr(1,0, "|",curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.addstr(" CTRL-G: Generate jobs " ,curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-		self.headerWindow.addstr(" CTRL-T: Modify refresh rate " ,curses.color_pair(1))
-		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		#self.headerWindow.addstr(" CTRL-T: Modify refresh rate " ,curses.color_pair(1))
+		#self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.addstr(" CTRL-R: Reset failed jobs ",curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-		self.headerWindow.addstr(" CTRL-C: Save and quit ",curses.color_pair(1))
+		self.headerWindow.addstr(" LEFT: Return to batch menu ",curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" CTRL-K: Invert keep output ",curses.color_pair(1))
 		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		self.headerWindow.chgat(curses.color_pair(1))
-		self.headerWindow.addstr(4,0, "Monitor {0} (saved in {0}.json) on queue {1}".format(headers["name"], headers["queue"]))
+		self.headerWindow.addstr(4,0, "Monitor {0} (saved in {0}.json) on queue {1}, keepOutput={2}".format(headers["name"], headers["queue"], headers['keep']))
 		self.headerWindow.addstr(5,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
 												headers["jobNumber"], headers["cardFile"], headers["maxAttempts"]))
-
+	
+	def displayMainHeader(self):
+		if self.stdscr == None:
+			return
+		self.headerWindow.clear()
+		self.headerWindow.addstr(0,50, "LXBATCH job monitoring")
+		self.headerWindow.move(0,0)
+		self.headerWindow.chgat(curses.color_pair(1))
+		self.headerWindow.addstr(1,0, "|",curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" K: Kill server " ,curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" RIGHT: Details of selected job " ,curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" UP/DOWN: Navigate jobs ",curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.addstr(" DEL: Remove batch ",curses.color_pair(1))
+		self.headerWindow.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		self.headerWindow.chgat(curses.color_pair(1))
+		
 	def displayTime(self, startTime):
 		if self.stdscr == None:
 			return
@@ -149,26 +173,24 @@ class Display2:
 			self.jobsWindow.addstr(1+i,5,"Permanent:".format(aNumber))
 			self.jobsWindow.addstr(1+i,65,str(stats["failed"]["permanent"]))
 	
-	def displaySubmit(self, jobID, jobIndex):
+	def displaySubmit(self, jobID, jobIndex, currentID):
 		if self.stdscr == None:
 			return
-		self.submitCurrent += 1
-		progress = (1.0*self.submitCurrent/self.submitTotal)*100
+		#self.submitCurrent += 1
+		progress = (1.0*currentID/self.submitTotal)*100
 		
+		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID,self.submitTotal, "#" * int(progress)))
 		x,y = self.submitIndex
+		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
+		
 		if x==self.submitMaxIndex[0]:
-			if y>self.submitMaxIndex[1]:
+			if y==self.submitMaxIndex[1]:
 				self.submitIndex = (0, 0)
 				self.wipeSubmitBlock()
 			else:
 				self.submitIndex = (0, y+1)
 		else:
 			self.submitIndex = (x+1,y)
-		
-		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(self.submitCurrent,self.submitTotal, "#" * int(progress)))
-		
-		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
-		
 		self.repaint()
 		
 	
@@ -201,14 +223,19 @@ class Display2:
 		self.headerWindow.move(2, 0)
 		self.headerWindow.clrtoeol()
 
-	def setError(self, strerr):
-		self.erroWindow.addstr(0, 0, strerr)
+    def setError(self, strerr):
+        self.erroWindow.addstr(0, 0, strerr)
 
 	def displayBatchList(self, l):
+		if self.stdscr==None:
+			return
 		self.stdscr.clear()
+		self.stdscr.refresh()
 		self.displayList = True
+		self.displayMainHeader()
 		self.batchList = FileDisplay(5, 30, 0, 150)
 		self.batchList.displayFiles(l)
+		#self.repaint()
 		
 	def reset(self):
 		self.displayList = False
@@ -228,14 +255,14 @@ class Display2:
 		
 
 class FileDisplay(object):
-	'''
-	classdocs
-	'''
-	
-	class fieldsSize:
-		nameField = 50
-		sizeField = 20
-		timeField = 20
+    '''
+    classdocs
+    '''
+    
+    class fieldsSize:
+        nameField = 50
+        sizeField = 20
+        timeField = 20
 
 	def __init__(self, start, end, leftCorner, width):
 		'''

@@ -5,9 +5,14 @@ Created on Sep 30, 2014
 '''
 
 import curses
-import Pyro4
-from . import Monitor2, Display2
+import threading
 
+import Pyro4
+
+from . import Monitor2, Display2
+import time
+
+stopAll = False
 class JobServer:
     '''
     xxx
@@ -15,6 +20,7 @@ class JobServer:
     
     def __init__(self):
         self.listBatch = {}
+        self.mutex = threading.Lock()
     
     def addBatch(self, cardFile, name, queue, test, keep):
         print "adding new batch"
@@ -33,17 +39,23 @@ class JobServer:
     def registerClient(self, name, clientUri):
         print "registering new client"
         if name in self.listBatch:
+            self.mutex.acquire()
             client = Pyro4.Proxy(clientUri)
             self.listBatch[name]["clients"].append(client)
-            return self.listBatch[name]["monitor"].config.startTime, self.listBatch[name]["monitor"].config.getHeaders()
+            header = self.listBatch[name]["monitor"].config.getHeaders()
+            header['keep'] = self.listBatch[name]["monitor"].keepOutput
+            self.mutex.release()
+            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList)
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
         if name in self.listBatch:
+            self.mutex.acquire()
             for client in self.listBatch[name]["clients"]:
                 if client._pyroUri == clientUri:
                     client._pyroRelease()
                     self.listBatch[name]["clients"].remove(client)
+            self.mutex.release()
     
     def disconnectAllClients(self):
         print "Disconnecting all clients"
@@ -69,29 +81,49 @@ class JobServer:
         if name in self.listBatch:
             self.listBatch[name]["monitor"].reSubmitFailed()
     
+    def invertKeepOutput(self, name):
+        print "Invert keep output"
+        if name in self.listBatch:
+            self.listBatch[name]["monitor"].invertKeepOutput()
+            header = self.listBatch[name]["monitor"].config.getHeaders()
+            header['keep'] = self.listBatch[name]["monitor"].keepOutput
+            return header
+    
     def mainLoop(self):
-        for _,batch in self.listBatch.iteritems():
-            batch["monitor"].monitor()
+        for _,batch in self.listBatch.items():
+            tMon = threading.Thread(target=batch["monitor"].monitor)
+            tMon.daemon = True
+            tMon.start()
             
             for clients in batch["clients"]:
                 clients.displaySummary(batch["monitor"].config.getStatusStats())
                 
-            if batch["monitor"].submitReady:
+            if batch["monitor"].submitReady and batch["monitor"].submitting==False:
                 if len(batch["monitor"].submitList)==0:
                     for clients in batch["clients"]:
                         clients.resetSubmit(batch["monitor"].config.getJobsNumberReady())
                 else:
                     for clients in batch["clients"]:
                         clients.resetSubmit(len(batch["monitor"].submitList))
-                for job in batch["monitor"].generateJobs():
-                    batch["monitor"].submit(job)
-                    for clients in batch["clients"]:
-                        clients.displayJobSent(job.jobID, job.index)
+                t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t.daemon = True
+                t.start()
 
-
+    def submitLoop(self, batch):
+        try:
+            batch["monitor"].submitting = False
+            for i, job in enumerate(batch["monitor"].generateJobs()):
+                        batch["monitor"].submit(job)
+                        if self.mutex.acquire():
+                            for clients in batch["clients"]:
+                                clients.displayJobSent(job.jobID, job.index, i)
+                            self.mutex.release()
+        except Exception:
+            print "".join(Pyro4.util.getPyroTraceback())
         
     def stop(self):
         global stopAll
+        print "Stopping server"
         stopAll = True
 
 class DisplayClient(object):
@@ -111,8 +143,8 @@ class DisplayClient(object):
     def updateStartTime(self):
         self.screen.displayTime(self.startTime)
     
-    def displayJobSent(self, jobId, jobIndex):
-        self.screen.displaySubmit(jobId, jobIndex)
+    def displayJobSent(self, jobId, jobIndex, currentID):
+        self.screen.displaySubmit(jobId, jobIndex, currentID)
     
     def displaySummary(self, stats):
         self.screen.displaySummary(stats)
@@ -126,27 +158,39 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
+            if curses.unctrl(k) == "K":
+                return -101, ""
             if self.screen.displayList:
                 if k == curses.KEY_DOWN:
                     self.screen.batchList.goDown()
-                if k == curses.KEY_UP:
+                elif k == curses.KEY_UP:
                     self.screen.batchList.goUp()
-                if k == curses.KEY_RIGHT:
+                elif k == curses.KEY_RIGHT:
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
-                if k == curses.KEY_DC:
-                    return -100, self.batchList[self.screen.batchList.currentCursor]
+                elif k == curses.KEY_DC:
+                    return -100, self.deleteBatch(self.screen.batchList.currentCursor)
             else:
                 if k == curses.KEY_LEFT:
                     return -1, self.disconnectBatch()
-                if curses.unctrl(k) == "^R":
+                elif curses.unctrl(k) == "^R":
                     return +100, self.batchName
-                if curses.unctrl(k) == "^G":
+                elif curses.unctrl(k) == "^G":
                     return +101, self.batchName
+                elif curses.unctrl(k) == "^K":
+                    return +102, self.batchName
+                 
                 
         
         return 0,""
     
+    def deleteBatch(self, index):
+        if(index>=len(self.batchList)):
+            return None
+        return self.batchList[index]
+    
     def selectBatch(self, index):
+        if(index>=len(self.batchList)):
+            return None
         self.screen.reset()
         self.batchName = self.batchList[index]
         return self.batchName
@@ -158,7 +202,8 @@ class DisplayClient(object):
         return batch
     
     def displayHeader(self, headers):
-        self.screen.displayHeader(headers)
+        if headers!=None:
+            self.screen.displayHeader(headers)
     
     def displayBatchList(self, l):
         self.batchList = l[:]
@@ -166,3 +211,6 @@ class DisplayClient(object):
     
     def getName(self):
         return self.batchName
+    
+    def setTotalJobs(self, total):
+        self.screen.submitTotal = total

@@ -31,15 +31,6 @@ class BatchJob:
 	Class representing a single job
 	'''
 	
-	inputFile = None
-	queue = None
-	index = None
-	jobID = None
-	status = None
-	attempts = None
-	script = None
-	jobSeq = None
-	
 	def __init__(self, inputFile, index, seq):
 		self.inputFile = inputFile
 		self.index = index
@@ -73,17 +64,13 @@ class finalBatchJob:
 	'''
 	Class representing the final job to execute
 	'''
-	script = None
-	jobID = None
-	queue = None
-	status = None
-	output = None
 	
 	def __init__(self, script):
 		self.script = script
 		self.jobID = None
 		self.status = None
 		self.queue = None
+		self.output = None
 	
 	def update(self, dico):
 		if "queue" in dico:
@@ -192,7 +179,8 @@ fileList:
 	
 	def _checkOutputDir(self):
 		if not os.path.exists(self.outputDir):
-			os.mkdir(self.outputDir)
+			#os.mkdir(self.outputDir)
+			pass
 		
 	def _readInputList(self, test):
 		with open(self.listFile,'r') as f:

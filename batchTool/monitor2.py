@@ -21,6 +21,8 @@ class Monitor2:
         self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
+        self.submitting = False
+        self.currentlyChecking = False
     
     def newBatch(self, cfgFile, batchName, queue, test):
         self.config.initCardFile(cfgFile, batchName, queue, test)
@@ -44,6 +46,7 @@ class Monitor2:
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
     
     def generateJobs(self):
+        self.submitting = True
         if len(self.submitList)==0:
             subList = [job for job in self.config.jobsList if job.attempts==-1]
         else:
@@ -58,10 +61,13 @@ class Monitor2:
         self.submitReady = True
     
     def monitor(self):
-        if not self.checkFinalize():
-            self.monitorNormal()
-        else:
-            self.monitorFinal()
+        if not self.currentlyChecking:
+            self.currentlyChecking = True
+            if not self.checkFinalize():
+                self.monitorNormal()
+            else:
+                self.monitorFinal()
+            self.currentlyChecking = False
     
     def monitorNormal(self):
         cmd = ["bjobs -a"]
@@ -89,6 +95,10 @@ class Monitor2:
     
     def checkFinalize(self):
         if self.config.finalizeStage==0:
+            if self.config.finalJob==None:
+                self.config.finalizeStage=2
+                return True
+            
             cmd = ["bsub -q " + self.config.queue]
             if self.config.requirement:
                 cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
@@ -110,4 +120,7 @@ class Monitor2:
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
                 self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
+        
+    def invertKeepOutput(self):
+        self.keepOutput = not self.keepOutput
         

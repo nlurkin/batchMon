@@ -5,19 +5,50 @@ Created on 27 Sep 2014
 
 @author: Nicolas
 '''
-import Pyro4
-import select
+import os
 import socket
+import sys
+
+import Pyro4
 from batchTool import JobServer
+from batchTool import pyroObjects
+import select
+
 
 nsDaemon = None
 pyroDaemon = None
 broadCastServer = None
 bServer = None
-stopAll = False
+
+def trace_calls(frame, event, arg):
+    if event != 'call':
+        return
+    co = frame.f_code
+    func_name = co.co_name
+    func_filename = co.co_filename
+    if "Python" in func_filename:
+        #ignore python calls
+        return
+    if "Pyro4" in func_filename:
+        #ignore Pyro calls
+        return
+    if "serpent" in func_filename:
+        #ignore Pyro calls
+        return
+    if func_name == 'write':
+        # Ignore write() calls from print statements
+        return
+    func_line_no = frame.f_lineno
+    caller = frame.f_back
+    caller_line_no = caller.f_lineno
+    caller_filename = caller.f_code.co_filename
+    print 'Call to %s on line %s of %s from line %s of %s' % \
+        (func_name, func_line_no, func_filename,
+         caller_line_no, caller_filename)
+    return
 
 def mainLoop():
-    global nsDaemon, broadCastServer, pyroDaemon, bServer, stopAll
+    global nsDaemon, broadCastServer, pyroDaemon, bServer
     while True:
         try:
             # create sets of the socket objects we will be waiting on
@@ -43,13 +74,17 @@ def mainLoop():
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
             bServer.mainLoop()
-            if stopAll:
+            if pyroObjects.stopAll:
                 break
         except KeyboardInterrupt:
+            print "Catching the interrupt"
             break
         except Pyro4.errors.CommunicationError as e:
             print e
             bServer.disconnectAllClients()
+        except Exception, e:
+            print "Unexpected error:", e.__doc__
+            print e.message
                 
     
     nsDaemon.close()
@@ -69,7 +104,8 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "w") as f:
+    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "w") as f:
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
         f.write(my_ip)
 
 #Starting batch server and associated pyro daemon
@@ -101,5 +137,7 @@ def main():
     mainLoop()
 
 if __name__=="__main__":
+    if len(sys.argv)>1:
+        sys.settrace(trace_calls)
     main()
     

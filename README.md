@@ -1,28 +1,58 @@
-This tool can be used to start and monitor jobs on LXBATCH.
+This set of tools can be used to start and monitor jobs on LXBATCH.
 It will monitor every job individually and resubmit it in
-ase of failure.
-There is a maximum number of trials before the monitor
-stops resubmitting the jobs.
+case of failure. There is a maximum number of trials before the monitor
+stops resubmitting the jobs. It consists of a python server and a python
+client, both running pyro (Python Remote Objects). 
+
+The server keeps track of all the batches, generates the jobs, monitor
+them and resubmit in case of failure. 
+
+The client connects to the server and receives informations about 
+the batches running on the server. It has a curse interface that shows 
+two different screens. 
+ - The first is the main menu, displaying the list of
+ existing batches. The top menu gives the list of available commands. Use
+ the arrow keys to navigate through the batches and the screen. Up and
+ down to select a different batch. Right to see the details of the batch
+ (second screen). The delete key will remove the batch from the server
+ (stop monitoring only, do not actually kills or remove the jobs). 
+ Finally a capital K will stop the server (WARNING! When stopped the
+ server forgets all the batches).
+ - The second screen shows the details of the selected batch, with 
+ information about the batch itself, statistics about the jobs. It also
+ gives access to commands to generate the jobs or re-generate them when
+ completely failed. The left key goes back to the main screen.
+	
+To initiate the connection with the server, the client needs to know the 
+ip address where the server runs. When starting the server writes this
+information in a file (.ns.cfg) in the HOME of the user. This is where the
+client retrieve the information.
+
 
 Usage
 -----
 batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k]
-				(-c CONFIG | -l LOAD)
+				[(-c CONFIG | -l LOAD)] [-s]
 
 optional arguments:
 	-h, --help        	show this help message and exit
 	-q QUEUE, --queue 	Indicates on which LXBATCH queue the jobs will be submitted
-	-t, --test				When restarting a series of job, for each job 
-	`							test if the output file already exists. If yes, 
-								skip the job (do not regenerate existing output files)
-	-n NAME, --name 		Name of the monitor (used for later recovery)
-	-x, --nocurse			Disable the curse interface
-	-k, --keep				Do not delete the LXBATCH output (LSFJOB_xxxxxxx)
-	-c CONFIG, --config  Configuration file to use (new monitor)
-	-l LOAD, --load 		Reload a previous monitor (restart tracking the jobs,
-								do not regenerate them)
+	-t, --test			When restarting a series of job, for each job 
+							test if the output file already exists. If yes, 
+							skip the job (do not regenerate existing output files)
+	-n NAME, --name 	Name of the batch
+	-k, --keep			Do not delete the LXBATCH output (LSFJOB_xxxxxxx)
+	-c CONFIG, --config Configuration file to use (new batch)
+	-l LOAD, --load 	Reload a previous batch (restart tracking the jobs,
+							do not regenerate them)
+	-s, --submit		Submit a batch, request the job generation and exit
 
--c or -l is required.
+Specifying no option will only open the normal curse interface without creating any
+batch.
+
+batchServer.py
+
+Does not take any option.
 
 Configuration file
 ------------------
@@ -32,21 +62,24 @@ Several fields are mandatory:
 	o executable : path to the main executable to run
 
 Others are not:
-	o optTemplate :line to use as argument for the
+	o optTemplate :	line to use as argument for the
 						executable 	(templated)
-	o preExecute : bash script to execute before starting 
+	o preExecute :	bash script to execute before starting 
 						the executable (templated)
-	o postExecute :bash script to execute after the 
+	o postExecute :	bash script to execute after the 
 						executable finished it's execution 
 						(templated)
-	o startIndex : starting index in the input list file
+	o startIndex :	starting index in the input list file
 	o maxJobs : 	maximum number of files to read fron the
 						input list file
-	o maxAttempts :maximum attempts before giving up on a job
+	o maxAttempts :	maximum attempts before giving up on a job
 	o outputDir : 	path to a directory where the monitor 
 						can find the output files
-	o outputFile : name of the ouput file (templated)
-	o requirement: specify requirement for bsub (-R flag)
+	o outputFile :	name of the ouput file (templated)
+	o requirement :	specify requirement for bsub (-R flag)
+	o finalScript :	script executed when all jobs are
+						successfully finished (can be used
+						to create a new batch)
 
 The fields marked as "templated" can use of the following 
 placeholder that will be replaced when submitting the job:
@@ -57,11 +90,3 @@ placeholder that will be replaced when submitting the job:
 						as defined by the outputDir field
 	o $outputFile :will be replaced by the filename as defined
 						by the outputFile field
-
-Running
--------
-Once in the curse interface:
-	o ctrl-G to generate and do the initial submission of the jobs
-	o ctrl-R to reset the failed jobs (permanent fail or maximum 
-			 attempts reached only)
-	o ctrl-T modify refresh rate (default=2s)
