@@ -25,10 +25,12 @@ class Monitor2:
         self.currentlyChecking = False
     
     def newBatch(self, cfgFile, batchName, queue, test):
+        print "Monitor creating new batch"
         self.config.initCardFile(cfgFile, batchName, queue, test)
-        self.submitReady = True
+        self.submitReady = False
     
     def submit(self, job):
+        print "Monitor submitting job"
         cmd = ["bsub -q " + self.config.queue]
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
@@ -46,6 +48,7 @@ class Monitor2:
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
     
     def generateJobs(self):
+        print "Monitor generating jobs"
         self.submitting = True
         if len(self.submitList)==0:
             subList = [job for job in self.config.jobsList if job.attempts==-1]
