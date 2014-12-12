@@ -177,9 +177,9 @@ class Display2:
 		if self.stdscr == None:
 			return
 		#self.submitCurrent += 1
-		progress = (1.0*currentID/self.submitTotal)*100
+		progress = ((1.0*currentID+1)/self.submitTotal)*100
 		
-		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID,self.submitTotal, "#" * int(progress)))
+		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID+1,self.submitTotal, "#" * int(progress)))
 		x,y = self.submitIndex
 		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
 		
