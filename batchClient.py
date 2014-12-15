@@ -131,6 +131,7 @@ def argParser():
             server.addBatch(os.getcwd()+"/"+args.config, args.name, args.queue, args.test, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
+            raise Exception()
     
     if args.submit:
         server.submitInit(args.name)
