@@ -19,7 +19,6 @@ class Display2:
 		debugBlock = 50
 		finalizeBlock = 20
 
-	submitIndex = (0,0)
 	submitMaxIndex = (4,5)
 	
 	currentDelay = 2
@@ -38,6 +37,7 @@ class Display2:
 		self.displayList = False
 		self.submitTotal = 0
 		self.submitCurrent = 0
+		self.submitIndex = (0,0)
 
 	
 	def getch(self):
@@ -139,7 +139,7 @@ class Display2:
 		if self.stdscr == None:
 			return
 		td = datetime.datetime.now()-datetime.datetime.fromtimestamp(startTime)
-		self.headerWindow.addstr(6,0, "Running since {0} ({1})      ".format(
+		self.headerWindow.addstr(6,0, "Running since {0} ({1})	  ".format(
 													datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S'), 
 													str(td)))
 
@@ -377,4 +377,3 @@ class FileDisplay(object):
 	
 	def getTime(self, mtime):
 		return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
-

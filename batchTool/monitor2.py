@@ -90,6 +90,7 @@ class Monitor2:
             self.submitList += reSubmit
     
     def submitInit(self):
+        print "Monitor subInit"
         self.config.enableNew()
         self.submitReady = True
     

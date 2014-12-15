@@ -6,7 +6,6 @@ Created on 16 May 2014
 from . import ConfigBatch
 import re
 import subprocess
-from . import BatchToolExceptions
 
 class Monitor:
 	'''
