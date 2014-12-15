@@ -179,18 +179,20 @@ class Display2:
 		#self.submitCurrent += 1
 		progress = ((1.0*currentID+1)/self.submitTotal)*100
 		
-		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID+1,self.submitTotal, "#" * int(progress)))
 		x,y = self.submitIndex
-		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
-		
+
 		if x==self.submitMaxIndex[0]:
-			if y==self.submitMaxIndex[1]:
+			if y>self.submitMaxIndex[1]:
 				self.submitIndex = (0, 0)
 				self.wipeSubmitBlock()
 			else:
 				self.submitIndex = (0, y+1)
 		else:
 			self.submitIndex = (x+1,y)
+		
+		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID+1,self.submitTotal, "#" * int(progress)))
+		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
+		
 		self.repaint()
 		
 	
