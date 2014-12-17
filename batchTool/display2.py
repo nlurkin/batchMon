@@ -19,7 +19,7 @@ class Display2:
 		debugBlock = 50
 		finalizeBlock = 20
 
-	submitMaxIndex = (4,5)
+	submitMaxIndex = (4,4)
 	
 	currentDelay = 2
 	
@@ -37,7 +37,7 @@ class Display2:
 		self.displayList = False
 		self.submitTotal = 0
 		self.submitCurrent = 0
-		self.submitIndex = (0,0)
+		self.submitIndex = (-1,0)
 
 	
 	def getch(self):
@@ -181,17 +181,24 @@ class Display2:
 		
 		x,y = self.submitIndex
 
-		if x==self.submitMaxIndex[0]:
+		#print self.submitIndex
+		if x>=self.submitMaxIndex[0]:
+			#print "pass1"
 			if y>self.submitMaxIndex[1]:
+				#print "pass2"
+				#print "wipe"
 				self.submitIndex = (0, 0)
 				self.wipeSubmitBlock()
 			else:
+				#print "not pass 2"
 				self.submitIndex = (0, y+1)
 		else:
+			#print "not pass 1"
 			self.submitIndex = (x+1,y)
 		
+		#print self.submitIndex
 		self.submitWindow.addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID+1,self.submitTotal, "#" * int(progress)))
-		self.submitWindow.addstr(2 + x,y*20, "{0} -> {1}".format(jobIndex, jobID))
+		self.submitWindow.addstr(2 + self.submitIndex[0],self.submitIndex[1]*20, "{0} -> {1}".format(jobIndex, jobID))
 		
 		self.repaint()
 		
