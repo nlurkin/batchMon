@@ -101,7 +101,7 @@ def argParser():
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
                     help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
-    parser.add_argument('-t', '--test', action='store_true', default="true",
+    parser.add_argument('-t', '--test', action='store_true', default=False,
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
