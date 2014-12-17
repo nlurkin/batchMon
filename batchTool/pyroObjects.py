@@ -165,8 +165,7 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
-            if curses.unctrl(k) == "K":
-                return -101, ""
+
             if self.screen.displayList:
                 if k == curses.KEY_DOWN:
                     self.screen.batchList.goDown()
@@ -176,6 +175,8 @@ class DisplayClient(object):
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
                 elif k == curses.KEY_DC:
                     return -100, self.deleteBatch(self.screen.batchList.currentCursor)
+                elif curses.unctrl(k) == "K":
+                    return -101, ""
             else:
                 if k == curses.KEY_LEFT:
                     return -1, self.disconnectBatch()
@@ -185,9 +186,7 @@ class DisplayClient(object):
                     return +101, self.batchName
                 elif curses.unctrl(k) == "^K":
                     return +102, self.batchName
-                 
-                
-        
+
         return 0,""
     
     def deleteBatch(self, index):
