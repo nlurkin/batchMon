@@ -58,6 +58,7 @@ class Monitor2:
             yield job
         self.submitList = []
         self.submitReady = False
+        self.submitting = False
     
     def reSubmitFailed(self):
         self.config.resetFailed()
