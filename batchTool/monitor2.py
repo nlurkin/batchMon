@@ -17,6 +17,7 @@ class Monitor2:
         Constructor
         '''
         self.submitList = []
+        self.resubmit = []
         self.keepOutput = keep
         self.config = ConfigBatch()
         self.submitReady = False
@@ -59,6 +60,8 @@ class Monitor2:
         self.submitList = []
         self.submitReady = False
         self.submitting = False
+
+
     
     def reSubmitFailed(self):
         self.config.resetFailed()
@@ -81,18 +84,18 @@ class Monitor2:
         #monOutput = f.read()
         #f.close()
     
-        reSubmit = []
         for line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
                 redo,index = self.config.updateJob(m.group(1), {"status":m.group(2)}, self.keepOutput)
                 if redo:
-                    reSubmit.append(index)
+                    self.reSubmit.append(index)
         
-        if len(reSubmit)>0:
+        if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
-            self.submitList += reSubmit
-    
+            self.submitList += self.reSubmit
+            self.resubmit = []
+            
     def submitInit(self):
         print "Monitor subInit"
         self.config.enableNew()
