@@ -17,7 +17,7 @@ class Monitor2:
         Constructor
         '''
         self.submitList = []
-        self.resubmit = []
+        self.reSubmit = []
         self.keepOutput = keep
         self.config = ConfigBatch()
         self.submitReady = False
@@ -94,7 +94,8 @@ class Monitor2:
         if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
             self.submitList.extend(self.reSubmit[:])
-            self.resubmit = []
+            self.reSubmit = []
+
             
     def submitInit(self):
         print "Monitor subInit"
