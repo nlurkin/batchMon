@@ -93,7 +93,7 @@ class Monitor2:
         
         if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
-            self.submitList += self.reSubmit
+            self.submitList.extend(self.reSubmit[:])
             self.resubmit = []
             
     def submitInit(self):
