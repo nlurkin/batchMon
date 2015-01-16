@@ -363,12 +363,12 @@ fileList:
 				if dico["status"]=="DONE":
 					#clean output
 					if os.path.exists(lsfPath) and not keep:
-						shutil.rmtree(lsfPath)
+						shutil.rmtree(lsfPath, True)
 				if dico["status"]=="EXIT":
 					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
 						#clean output
 						if os.path.exists(lsfPath) and not keep:
-							shutil.rmtree(lsfPath)
+							shutil.rmtree(lsfPath, True)
 						reSubmit = True
 						seq = jobSeq
 						del self.jobCorrespondance[jobID]
