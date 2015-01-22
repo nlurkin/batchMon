@@ -114,7 +114,7 @@ def argParser():
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
-    groupNew.add_argument("-l", "--load", action="store_true",
+    groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
@@ -129,11 +129,17 @@ def argParser():
     if args.config:
         try:
             if not os.path.isabs(args.config):
-               args.config = os.getcwd()+"/"+args.config
+                args.config = os.getcwd()+"/"+args.config
             server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
-    
+    elif args.load:
+        try:
+            if not os.path.isabs(args.load):
+                args.load = os.getcwd()+"/"+args.load
+            server.loadBatch(args.load, args.name, args.keep)
+        except Exception:
+            print "".join(Pyro4.util.getPyroTraceback())        
     if args.submit:
         server.submitInit(args.name)
         return 

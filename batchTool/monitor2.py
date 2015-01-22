@@ -29,6 +29,15 @@ class Monitor2:
         print "Monitor creating new batch"
         self.config.initCardFile(cfgFile, batchName, queue, test)
         self.submitReady = False
+
+    def loadBatch(self, jsonFile):
+        print "Monitor loading new batch"
+        self.config.load(jsonFile)
+        self.submitReady = False
+    
+    def saveBatch(self, jsonFile):
+        print "Saving batch"
+        self.config.save(jsonFile)
     
     def submit(self, job):
         print "Monitor submitting job"

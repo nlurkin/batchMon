@@ -31,7 +31,7 @@ def encode_dict(obj):
 	Encode a dictionary for json 
 	'''
 	if isinstance(obj, BatchJob) or isinstance(obj,finalBatchJob):
-		return obj.__dict__
+		return obj.__dict__.__str__()
 	return obj
 
 class BatchJob:
@@ -39,15 +39,18 @@ class BatchJob:
 	Class representing a single job
 	'''
 	
-	def __init__(self, inputFile, index, seq):
-		self.inputFile = inputFile
-		self.index = index
-		self.queue = None
-		self.jobID = None
-		self.status = None
-		self.attempts = -2
-		self.script = None
-		self.jobSeq = seq
+	def __init__(self, data, inputFile, index, seq):
+		if data==None:
+			self.inputFile = inputFile
+			self.index = index
+			self.queue = None
+			self.jobID = None
+			self.status = None
+			self.attempts = -2
+			self.script = None
+			self.jobSeq = seq
+		else:
+			self.__dict__ = data
 	
 	def update(self, dico):
 		'''
@@ -176,12 +179,13 @@ fileList:
 		'''
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
-			xxx = finalBatchJob("")
-			xxx.__dict__ = self.finalJob
-			self.finalJob = xxx
+			#xxx = finalBatchJob("")
+			#xxx.__dict__ = self.finalJob
+			#self.finalJob = xxx
+			self.jobsList = []
 			for job in jobsList:
-				j = BatchJob(None, None, None)
-				j.__dict__ = job 
+				jsonstring = job.replace("'", '"').replace("None", 'null')
+				j = BatchJob(json.loads(jsonstring), None, None, None)
 				self.jobsList.append(j)
 	
 	def save(self, fileName):
@@ -233,7 +237,7 @@ fileList:
 					#Always create the job if we don't test
 					#Else create only if output file does not exist
 					if (not test) or self._testOutputFile(i):
-						self.jobsList.append(BatchJob(line.strip('\n'), i, j))
+						self.jobsList.append(BatchJob(None, line.strip('\n'), i, j))
 						j += 1
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:

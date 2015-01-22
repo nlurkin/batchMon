@@ -30,6 +30,15 @@ class JobServer:
         batch = Monitor2(keep)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
+    
+    def loadBatch(self, jsonFile, name, keep):
+        print "adding new batch (load)"
+        if name in self.listBatch:
+            #error
+            return
+        batch = Monitor2(keep)
+        batch.loadBatch(jsonFile)
+        self.listBatch[name] = {"monitor":batch, "clients":[]}
         
     def removeBatch(self, name):
         print "removing batch"
@@ -127,11 +136,21 @@ class JobServer:
                             self.mutex.release()
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
-        
+    
+    def saveAllBatches(self):
+        for name,b in self.listBatch.items():
+            b['monitor'].saveBatch("%s.json" % name)
+            
     def stop(self):
         global stopAll
         print "Stopping server"
         stopAll = True
+        
+    def kill(self):
+        print "Killing server properly"
+        self.disconnectAllClients()
+        self.saveAllBatches()
+        
 
 class DisplayClient(object):
     """

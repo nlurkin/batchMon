@@ -78,13 +78,15 @@ def mainLoop():
                 break
         except KeyboardInterrupt:
             print "Catching the interrupt"
+            bServer.kill()
             break
         except Pyro4.errors.CommunicationError as e:
             print e
-            bServer.disconnectAllClients()
+            bServer.kill()
         except Exception, e:
             print "Unexpected error:", e.__doc__
             print e.message
+            bServer.kill()
                 
     
     nsDaemon.close()
