@@ -133,6 +133,7 @@ def argParser():
             server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
+            raise Exception()
     elif args.load:
         try:
             if not os.path.isabs(args.load):
@@ -140,6 +141,7 @@ def argParser():
             server.loadBatch(args.load, args.name, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())        
+            raise Exception()
     if args.submit:
         server.submitInit(args.name)
         return 
