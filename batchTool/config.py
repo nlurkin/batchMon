@@ -222,7 +222,7 @@ fileList:
 		'''
 		Check if the outputDir exists. If not, create it
 		'''
-		if not FSSelector.exists(self.outputDir):
+		if not FSSelector.exists(self.outputDir, True):
 			FSSelector.mkDir(self.outputDir)
 		
 	def _readInputList(self, test):
