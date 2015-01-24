@@ -54,7 +54,7 @@ class JobServer:
             header = self.listBatch[name]["monitor"].config.getHeaders()
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
             self.mutex.release()
-            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList)
+            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList), self.listBatch[name]["monitor"].config.getStatusStats()
     
     def disconnectClient(self, name, clientUri):
         print "disconnecting client"
