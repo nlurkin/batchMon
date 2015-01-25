@@ -131,10 +131,15 @@ class JobServer:
                         print "Generate job " + str(i)
                         batch["monitor"].submit(job)
                         if self.mutex.acquire():
-                            for clients in batch["clients"]:
-                                clients.displayJobSent(job.jobID, job.index, i)
-                            self.mutex.release()
+                            try:
+                                for clients in batch["clients"]:
+                                    clients.displayJobSent(job.jobID, job.index, i)
+                            except Exception:
+                                print "".join(Pyro4.util.getPyroTraceback())
+                            finally:
+                                self.mutex.release()
         except Exception:
+            self.mutex.release()
             print "".join(Pyro4.util.getPyroTraceback())
     
     def saveAllBatches(self):
