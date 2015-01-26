@@ -50,6 +50,7 @@ class JobServer:
         if name in self.listBatch:
             self.mutex.acquire()
             client = Pyro4.Proxy(clientUri)
+            client._pyroTimeout = 5
             self.listBatch[name]["clients"].append(client)
             header = self.listBatch[name]["monitor"].config.getHeaders()
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
@@ -139,7 +140,6 @@ class JobServer:
                             finally:
                                 self.mutex.release()
         except Exception:
-            self.mutex.release()
             print "".join(Pyro4.util.getPyroTraceback())
     
     def saveAllBatches(self):
