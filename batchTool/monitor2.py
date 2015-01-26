@@ -6,6 +6,30 @@ Created on 16 May 2014
 from . import ConfigBatch
 import re
 import subprocess
+import threading
+
+class subCommand(threading.Thread):
+    def __init__(self, cmd, script, timeout):
+        threading.Thread.__init__(self)
+        self.cmd = cmd
+        self.script = script
+        self.timeout = timeout
+        self.subOutput = None
+    
+    def run(self):
+        self.p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+        (self.subOutput, _) = self.p.communicate(self.script)
+    
+    def Run(self):
+        self.start()
+        self.join(self.timeout)
+
+        if self.is_alive():
+            self.p.terminate()      #use self.p.kill() if process needs a kill -9
+            self.join()
+        
+        return self.subOutput
+
 
 class Monitor2:
     '''
@@ -44,8 +68,12 @@ class Monitor2:
         cmd = ["bsub -q " + self.config.queue]
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
-        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-        (subOutput, _) = subCmd.communicate(job.script)
+        #subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+        #(subOutput, _) = subCmd.communicate(job.script)
+        subOutput = subCommand(cmd, job.script, 10).Run()
+        
+        if subOutput==None:
+            return
         #f = open("simSubmit", "r")
         #subOutput = f.read()
         #f.close()

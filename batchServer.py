@@ -76,6 +76,8 @@ def mainLoop():
             bServer.mainLoop()
             if pyroObjects.stopAll:
                 break
+        except Pyro4.errors.TimeoutError:
+            print "Timeout"
         except KeyboardInterrupt:
             print "Catching the interrupt"
             bServer.kill()

@@ -102,7 +102,7 @@ class JobServer:
     
     def mainLoop(self):
         print "Mainloop"
-        for _,batch in self.listBatch.items():
+        for name,batch in self.listBatch.items():
             tMon = threading.Thread(target=batch["monitor"].monitor)
             tMon.daemon = True
             tMon.start()
@@ -120,26 +120,32 @@ class JobServer:
                     for clients in batch["clients"]:
                         clients.resetSubmit(len(batch["monitor"].submitList))
                 t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t.setName(name)
                 t.daemon = True
                 t.start()
 
     def submitLoop(self, batch):
-        print "Enter submit loop"
+        cThread = threading.currentThread()
+        print "["+cThread.name+"] Enter submit loop"
         try:
             batch["monitor"].submitting = False
-            print "Number of ready jobs " + str(batch["monitor"].config.getJobsNumberReady())
+            print "["+cThread.name+"] Number of ready jobs " + str(batch["monitor"].config.getJobsNumberReady())
             for i, job in enumerate(batch["monitor"].generateJobs()):
-                        print "Generate job " + str(i)
+                        print "["+cThread.name+"] Generate job " + str(i)
                         batch["monitor"].submit(job)
+                        print "["+cThread.name+"] acquire mutex"
                         if self.mutex.acquire():
                             try:
                                 for clients in batch["clients"]:
                                     clients.displayJobSent(job.jobID, job.index, i)
                             except Exception:
+                                print "["+cThread.name+"]"
                                 print "".join(Pyro4.util.getPyroTraceback())
                             finally:
+                                print "["+cThread.name+"] release mutex"
                                 self.mutex.release()
         except Exception:
+            print "["+cThread.name+"]"
             print "".join(Pyro4.util.getPyroTraceback())
     
     def saveAllBatches(self):
