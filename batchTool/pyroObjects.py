@@ -10,12 +10,13 @@ import threading
 import Pyro4
 
 from . import Monitor2, Display2
+from util import printDebug
 import time
 
 stopAll = False
 class JobServer:
     '''
-    xxx
+    Jobserver. Pyro object connected by the client.
     '''
     
     def __init__(self):
@@ -23,32 +24,42 @@ class JobServer:
         self.mutex = threading.Lock()
     
     def addBatch(self, cardFile, name, queue, test, keep):
-        print "adding new batch"
+        printDebug(3, "Adding new batch %s" % name)
         if name in self.listBatch:
-            #error
+            printDebug(2, "Batch %s already exists" % name)
             return
         batch = Monitor2(keep)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
+    
+    def loadBatch(self, jsonFile, name, keep):
+        printDebug(3, "Loading new batch %s from %s" % (name, jsonFile))
+        if name in self.listBatch:
+            printDebug(2, "Batch %s already exists" % name)
+            return
+        batch = Monitor2(keep)
+        batch.loadBatch(jsonFile)
+        self.listBatch[name] = {"monitor":batch, "clients":[]}
         
     def removeBatch(self, name):
-        print "removing batch"
+        printDebug(3, "Removing batch %s" % name)
         if name in self.listBatch:
             del self.listBatch[name]
             
     def registerClient(self, name, clientUri):
-        print "registering new client"
+        printDebug(3, "Registering client %s for %s" % (clientUri, name))
         if name in self.listBatch:
             self.mutex.acquire()
             client = Pyro4.Proxy(clientUri)
+            client._pyroTimeout = 5
             self.listBatch[name]["clients"].append(client)
             header = self.listBatch[name]["monitor"].config.getHeaders()
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
             self.mutex.release()
-            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList)
+            return self.listBatch[name]["monitor"].config.startTime, header, len(self.listBatch[name]["monitor"].config.jobsList), self.listBatch[name]["monitor"].config.getStatusStats()
     
     def disconnectClient(self, name, clientUri):
-        print "disconnecting client"
+        printDebug(3, "Disconnecting client %s for %s" % (clientUri, name))
         if name in self.listBatch:
             self.mutex.acquire()
             for client in self.listBatch[name]["clients"]:
@@ -58,32 +69,31 @@ class JobServer:
             self.mutex.release()
     
     def disconnectAllClients(self):
-        print "Disconnecting all clients"
+        printDebug(3, "Disconnecting all clients")
         for _,batch in self.listBatch.iteritems():
             for client in batch["clients"]:
                 client._pyroRelease()
                 batch["clients"].remove(client)
         
     def getBatchList(self):
-        print "Sending batch list"
+        printDebug(3, "Sending batch list")
         l = []
         for name,_ in self.listBatch.iteritems():
             l.append(name)
         return l
     
     def submitInit(self, name):
-        print "Init submiting batch"
+        printDebug(3, "Initial submit for batch %s" % name)
         if name in self.listBatch:
-            print "Request Submit batch name"
             self.listBatch[name]["monitor"].submitInit()
     
     def resubmitFailed(self, name):
-        print "resubmiting failed batch"
+        printDebug(3, "Resubmiting failed jobs for batch %s" % name)
         if name in self.listBatch:
             self.listBatch[name]["monitor"].reSubmitFailed()
     
     def invertKeepOutput(self, name):
-        print "Invert keep output"
+        printDebug(3, "Invert keep output for batch %s" % name)
         if name in self.listBatch:
             self.listBatch[name]["monitor"].invertKeepOutput()
             header = self.listBatch[name]["monitor"].config.getHeaders()
@@ -91,8 +101,7 @@ class JobServer:
             return header
     
     def mainLoop(self):
-        print "Mainloop"
-        for _,batch in self.listBatch.items():
+        for name,batch in self.listBatch.items():
             tMon = threading.Thread(target=batch["monitor"].monitor)
             tMon.daemon = True
             tMon.start()
@@ -100,8 +109,6 @@ class JobServer:
             for clients in batch["clients"]:
                 clients.displaySummary(batch["monitor"].config.getStatusStats())
             
-            print "Submit ready " + str(batch["monitor"].submitReady)
-            print "Submitting " + str(batch["monitor"].submitting) 
             if batch["monitor"].submitReady and batch["monitor"].submitting==False:
                 if len(batch["monitor"].submitList)==0:
                     for clients in batch["clients"]:
@@ -110,33 +117,53 @@ class JobServer:
                     for clients in batch["clients"]:
                         clients.resetSubmit(len(batch["monitor"].submitList))
                 t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t.setName(name)
                 t.daemon = True
                 t.start()
 
     def submitLoop(self, batch):
-        print "Enter submit loop"
+        cThread = threading.currentThread()
+        printDebug(3, "["+cThread.name+"] Enter submit loop")
         try:
             batch["monitor"].submitting = False
-            print "Number of ready jobs " + str(batch["monitor"].config.getJobsNumberReady())
+            printDebug(3, "["+cThread.name+"] Number of jobs in Ready state: " + str(batch["monitor"].config.getJobsNumberReady()))
             for i, job in enumerate(batch["monitor"].generateJobs()):
-                        print "Generate job " + str(i)
+                        printDebug(3, "["+cThread.name+"] Generate job " + str(i))
                         batch["monitor"].submit(job)
+                        printDebug(3, "["+cThread.name+"] acquire mutex")
                         if self.mutex.acquire():
-                            for clients in batch["clients"]:
-                                clients.displayJobSent(job.jobID, job.index, i)
-                            self.mutex.release()
+                            try:
+                                for clients in batch["clients"]:
+                                    clients.displayJobSent(job.jobID, job.index, i)
+                            except Exception:
+                                printDebug(1, "["+cThread.name+"] Exception:")
+                                printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
+                            finally:
+                                printDebug(3, "["+cThread.name+"] release mutex")
+                                self.mutex.release()
         except Exception:
-            print "".join(Pyro4.util.getPyroTraceback())
-        
+            printDebug(1, "["+cThread.name+"] Exception")
+            printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
+    
+    def saveAllBatches(self):
+        for name,b in self.listBatch.items():
+            b['monitor'].saveBatch("%s.json" % name)
+            
     def stop(self):
         global stopAll
-        print "Stopping server"
+        printDebug(3, "Stopping server")
         stopAll = True
+        
+    def kill(self):
+        printDebug(3, "Killing server properly")
+        self.disconnectAllClients()
+        self.saveAllBatches()
+        
 
 class DisplayClient(object):
     """
-    xxx
-    """    
+    Display client. Pyro object connected by the server.
+    """
     def __init__(self, scr):
         self.startTime = None
         self.screen = Display2()

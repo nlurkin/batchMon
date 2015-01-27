@@ -14,9 +14,9 @@ def isFile():
 def isDirectory():
     pass
 
-def exists(path):
+def exists(path, preload=False):
     if "/eos/" in path:
-        return EOSFS.exists(path)
+        return EOSFS.exists(path, preload)
     else:
         return LinuxFS.exists(path) 
 

@@ -1,9 +1,20 @@
 #!/bin/env python
-"""
-xxx
-"""
+'''
+Created on 27 Sep 2014
 
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+@author: Nicolas Lurkin
+
+batchClient can connect to a central batchServer instance. It can create new batches, 
+load existing batches and display monitoring informations sent by the server.
+'''
+
+__version__ = '3.0'
+
+try:
+    from argparse import ArgumentParser, RawDescriptionHelpFormatter
+except ImportError:
+    from batchTool.argparse import ArgumentParser, RawDescriptionHelpFormatter
+
 import curses
 import os
 import socket
@@ -69,11 +80,12 @@ def mainLoop():
 
 def registerClient(name):
     global client, serveruri
-    startTime, headers, totalJobs = server.registerClient(name, serveruri)
+    startTime, headers, totalJobs, summary = server.registerClient(name, serveruri)
     
     client.setStartTime(startTime)
     client.displayHeader(headers)
     client.setTotalJobs(totalJobs)
+    client.displaySummary(summary)
     
 def mainInit(scr=None):
     global pyroDaemon, serveruri, client, server
@@ -114,7 +126,7 @@ def argParser():
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
-    groupNew.add_argument("-l", "--load", action="store_true",
+    groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
@@ -129,11 +141,19 @@ def argParser():
     if args.config:
         try:
             if not os.path.isabs(args.config):
-               args.config = os.getcwd()+"/"+args.config
+                args.config = os.getcwd()+"/"+args.config
             server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
-    
+            raise Exception()
+    elif args.load:
+        try:
+            if not os.path.isabs(args.load):
+                args.load = os.getcwd()+"/"+args.load
+            server.loadBatch(args.load, args.name, args.keep)
+        except Exception:
+            print "".join(Pyro4.util.getPyroTraceback())        
+            raise Exception()
     if args.submit:
         server.submitInit(args.name)
         return 

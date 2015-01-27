@@ -1,8 +1,8 @@
 This set of tools can be used to start and monitor jobs on LXBATCH.
-It will monitor every job individually and resubmit it in
-case of failure. There is a maximum number of trials before the monitor
-stops resubmitting the jobs. It consists of a python server and a python
-client, both running pyro (Python Remote Objects). 
+It will monitor every job individually and resubmit it in case of failure. 
+There is a maximum number of trials before the monitor stops resubmitting
+the jobs. It consists of a python server and a python client, both
+running pyro (Python Remote Objects). 
 
 The server keeps track of all the batches, generates the jobs, monitor
 them and resubmit in case of failure. 
@@ -29,8 +29,8 @@ information in a file (.ns.cfg) in the HOME of the user. This is where the
 client retrieve the information.
 
 
-Usage
------
+batchMon.py Usage
+--------------
 batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k]
 				[(-c CONFIG | -l LOAD)] [-s]
 
@@ -50,13 +50,17 @@ optional arguments:
 Specifying no option will only open the normal curse interface without creating any
 batch.
 
-batchServer.py
+batchServer.py Usage
+--------------------
+batServer.py [-dn] [-t] [-h|-help|help]
+	-dn:  Print debugging information according to the debug level n: 0=No debug, 1=Error, 2=Warning, 3=Info
+	-t: Activate tracing
+	-h|-help|help: Print this help
 
-Does not take any option.
 
 Configuration file
 ------------------
-The configuration file is parsed and defintes the monitor. 
+The configuration file is parsed and defines the monitor. 
 Several fields are mandatory:
 	o listFile : path to a file containing the list of files to process
 	o executable : path to the main executable to run

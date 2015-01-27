@@ -3,15 +3,20 @@
 '''
 Created on 27 Sep 2014
 
-@author: Nicolas
+@author: Nicolas Lurkin
+
+batchServer is a central instance that monitors batches of jobs on lxbatch.
+batchClients can connect to it to submit jobs or display monitoring information.
 '''
+
+__version__ = '3.0'
+
 import os
 import socket
 import sys
 
 import Pyro4
-from batchTool import JobServer
-from batchTool import pyroObjects
+from batchTool import JobServer, pyroObjects, printDebug, util
 import select
 
 
@@ -76,15 +81,19 @@ def mainLoop():
             bServer.mainLoop()
             if pyroObjects.stopAll:
                 break
+        except Pyro4.errors.TimeoutError:
+            printDebug(3, "Timeout")
         except KeyboardInterrupt:
-            print "Catching the interrupt"
+            printDebug(3, "Catching the interrupt")
+            bServer.kill()
             break
         except Pyro4.errors.CommunicationError as e:
-            print e
-            bServer.disconnectAllClients()
+            printDebug(1, e)
+            bServer.kill()
         except Exception, e:
-            print "Unexpected error:", e.__doc__
+            printDebug(1, ("Unexpected error:", e.__doc__))
             print e.message
+            bServer.kill()
                 
     
     nsDaemon.close()
@@ -136,8 +145,32 @@ def main():
     
     mainLoop()
 
+def tryint(val):
+    try:
+        return int(val)
+    except ValueError:
+        return False
+
+def printUsage():
+    print __doc__
+    print "\nUsage:"
+    print "\t -d\033[4mn\033[0m:  Print debugging information according to the debug level \033[4mn\033[0m: 0=No debug, 1=Error, 2=Warning, 3=Info"
+    print "\t -t: Activate tracing"
+    print "\t -h: Print this help"
+    
 if __name__=="__main__":
+    useTrace = False
     if len(sys.argv)>1:
+        for arg in sys.argv:
+            if arg.startswith('-d') and tryint(arg[2:])!=False:
+                util._debugLevel = tryint(arg[2:])
+            elif arg.startswith('-t'):
+                useTrace = True
+            elif arg.startswith("-h") or arg.startswith("h"):
+                printUsage()
+                sys.exit(0)
+    if useTrace:
         sys.settrace(trace_calls)
-    main()
+    else:
+        main()
     
