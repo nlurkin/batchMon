@@ -9,7 +9,8 @@ import threading
 
 import Pyro4
 
-from . import Monitor2, Display2, _debugLevel, printDebug
+from . import Monitor2, Display2
+from util import printDebug
 import time
 
 stopAll = False

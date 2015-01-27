@@ -3,7 +3,8 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
-from . import ConfigBatch, printDebug
+from . import ConfigBatch
+from util import printDebug
 import re
 import subprocess
 import threading
