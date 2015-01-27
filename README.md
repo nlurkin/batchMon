@@ -29,8 +29,8 @@ information in a file (.ns.cfg) in the HOME of the user. This is where the
 client retrieve the information.
 
 
-Usage
------
+batchMon.py Usage
+--------------
 batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k]
 				[(-c CONFIG | -l LOAD)] [-s]
 
@@ -50,13 +50,12 @@ optional arguments:
 Specifying no option will only open the normal curse interface without creating any
 batch.
 
-batchServer.py
-
-Usage
------
+batchServer.py Usage
+--------------------
+batServer.py [-dn] [-t] [-h|-help|help]
 	-dn:  Print debugging information according to the debug level n: 0=No debug, 1=Error, 2=Warning, 3=Info
 	-t: Activate tracing
-	-h: Print this help
+	-h|-help|help: Print this help
 
 
 Configuration file
