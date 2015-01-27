@@ -3,7 +3,11 @@
 xxx
 """
 
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+try:
+    from argparse import ArgumentParser, RawDescriptionHelpFormatter
+except ImportError:
+    from batchTool.argparse import ArgumentParser, RawDescriptionHelpFormatter
+
 import curses
 import os
 import socket
