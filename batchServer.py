@@ -10,7 +10,7 @@ import socket
 import sys
 
 import Pyro4
-from batchTool import JobServer, _debugLevel, pyroObjects, printDebug
+from batchTool import JobServer, pyroObjects, printDebug, util
 import select
 
 
@@ -146,12 +146,11 @@ def tryint(val):
         return False
 
 if __name__=="__main__":
-    global _debugLevel
     useTrace = False
     if len(sys.argv)>1:
         for arg in sys.argv:
-            if arg.startswith('-d') and tryint(arg[1:])!=False:
-                _debugLevel = tryint(arg[1:])
+            if arg.startswith('-d') and tryint(arg[2:])!=False:
+                util._debugLevel = tryint(arg[2:])
             elif arg.startswith('-t'):
                 useTrace = True
     if useTrace:

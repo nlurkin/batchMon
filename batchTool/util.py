@@ -8,5 +8,5 @@ Created on Jan 27, 2015
 _debugLevel = 0
 
 def printDebug(debugLvl, msg):
-    if debugLvl >= _debugLevel:
+    if debugLvl <= _debugLevel:
         print msg
