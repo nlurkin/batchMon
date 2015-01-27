@@ -3,7 +3,10 @@
 '''
 Created on 27 Sep 2014
 
-@author: Nicolas
+@author: Nicolas Lurkin
+
+batchServer is a central instance that monitors batches of jobs on lxbatch.
+batchClients can connect to it to submit jobs or display monitoring information.
 '''
 import os
 import socket
@@ -82,7 +85,7 @@ def mainLoop():
             bServer.kill()
             break
         except Pyro4.errors.CommunicationError as e:
-            print e
+            printDebug(1, e)
             bServer.kill()
         except Exception, e:
             printDebug(1, ("Unexpected error:", e.__doc__))
@@ -145,6 +148,13 @@ def tryint(val):
     except ValueError:
         return False
 
+def printUsage():
+    print __doc__
+    print "\nUsage:"
+    print "\t -d\033[4mn\033[0m:  Print debugging information according to the debug level \033[4mn\033[0m: 0=No debug, 1=Error, 2=Warning, 3=Info"
+    print "\t -t: Activate tracing"
+    print "\t -h: Print this help"
+    
 if __name__=="__main__":
     useTrace = False
     if len(sys.argv)>1:
@@ -153,6 +163,9 @@ if __name__=="__main__":
                 util._debugLevel = tryint(arg[2:])
             elif arg.startswith('-t'):
                 useTrace = True
+            elif arg.startswith("-h") or arg.startswith("h"):
+                printUsage()
+                sys.exit(0)
     if useTrace:
         sys.settrace(trace_calls)
     else:

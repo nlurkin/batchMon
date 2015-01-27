@@ -1,8 +1,8 @@
 This set of tools can be used to start and monitor jobs on LXBATCH.
-It will monitor every job individually and resubmit it in
-case of failure. There is a maximum number of trials before the monitor
-stops resubmitting the jobs. It consists of a python server and a python
-client, both running pyro (Python Remote Objects). 
+It will monitor every job individually and resubmit it in case of failure. 
+There is a maximum number of trials before the monitor stops resubmitting
+the jobs. It consists of a python server and a python client, both
+running pyro (Python Remote Objects). 
 
 The server keeps track of all the batches, generates the jobs, monitor
 them and resubmit in case of failure. 
@@ -52,11 +52,16 @@ batch.
 
 batchServer.py
 
-Does not take any option.
+Usage
+-----
+	-dn:  Print debugging information according to the debug level n: 0=No debug, 1=Error, 2=Warning, 3=Info
+	-t: Activate tracing
+	-h: Print this help
+
 
 Configuration file
 ------------------
-The configuration file is parsed and defintes the monitor. 
+The configuration file is parsed and defines the monitor. 
 Several fields are mandatory:
 	o listFile : path to a file containing the list of files to process
 	o executable : path to the main executable to run
