@@ -1,3 +1,5 @@
+__version__ = '3.0'
+
 from config import ConfigBatch, BatchToolExceptions
 from monitor2 import Monitor2
 from monitor import Monitor

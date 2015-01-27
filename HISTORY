@@ -1,0 +1,22 @@
+3.0
+---
+	- Do not resubmit when initial submit is still ongoing (resubmit were never taken)
+	- Ignore non existing batch output when cleaning
+	- Server can save and load batches (json format)
+	- Performance improvement for EOS: cache directory content for test. Check existence
+		of output file in the cache instead of always looking in EOS. The cache expires
+		after 1 minute.
+	- Batch summary is send directly to client when connecting instead of waiting for
+		the next monitor.
+	- Use timeout for client calls from server to avoid blocking it completely when client
+		has disconnected in the mean time.
+	- Use timeout for bsub subprocess command.
+
+2.1
+---
+	- Fix --test flag
+	- Add EOS support for output
+	- Client displays correctly the submission until the bottom right corner
+	- Client cannot kill server while watching a batch, only on main screen
+	- Add test suite
+	

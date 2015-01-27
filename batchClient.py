@@ -1,7 +1,14 @@
 #!/bin/env python
-"""
-xxx
-"""
+'''
+Created on 27 Sep 2014
+
+@author: Nicolas Lurkin
+
+batchClient can connect to a central batchServer instance. It can create new batches, 
+load existing batches and display monitoring informations sent by the server.
+'''
+
+__version__ = '3.0'
 
 try:
     from argparse import ArgumentParser, RawDescriptionHelpFormatter

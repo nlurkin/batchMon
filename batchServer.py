@@ -8,6 +8,9 @@ Created on 27 Sep 2014
 batchServer is a central instance that monitors batches of jobs on lxbatch.
 batchClients can connect to it to submit jobs or display monitoring information.
 '''
+
+__version__ = '3.0'
+
 import os
 import socket
 import sys
