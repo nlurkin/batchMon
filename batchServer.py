@@ -10,8 +10,7 @@ import socket
 import sys
 
 import Pyro4
-from batchTool import JobServer
-from batchTool import pyroObjects
+from batchTool import JobServer, _debugLevel, pyroObjects, printDebug
 import select
 
 
@@ -77,16 +76,16 @@ def mainLoop():
             if pyroObjects.stopAll:
                 break
         except Pyro4.errors.TimeoutError:
-            print "Timeout"
+            printDebug(3, "Timeout")
         except KeyboardInterrupt:
-            print "Catching the interrupt"
+            printDebug(3, "Catching the interrupt")
             bServer.kill()
             break
         except Pyro4.errors.CommunicationError as e:
             print e
             bServer.kill()
         except Exception, e:
-            print "Unexpected error:", e.__doc__
+            printDebug(1, ("Unexpected error:", e.__doc__))
             print e.message
             bServer.kill()
                 
@@ -140,8 +139,23 @@ def main():
     
     mainLoop()
 
+def tryint(val):
+    try:
+        return int(val)
+    except ValueError:
+        return False
+
 if __name__=="__main__":
+    global _debugLevel
+    useTrace = False
     if len(sys.argv)>1:
+        for arg in sys.argv:
+            if arg.startswith('-d') and tryint(arg[1:])!=False:
+                _debugLevel = tryint(arg[1:])
+            elif arg.startswith('-t'):
+                useTrace = True
+    if useTrace:
         sys.settrace(trace_calls)
-    main()
+    else:
+        main()
     
