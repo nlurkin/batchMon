@@ -114,7 +114,7 @@ def argParser():
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
                     help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
     parser.add_argument('--limit', action='store', default="-1", 
-                    help="Limit on concurrently running jobs (default=-1: no limit)")
+                    help="Limit on concurrently active (RUN or PEND) jobs (default=-1: no limit).This is not a strict limit as there is a delay between submitting and monitoring.")
     parser.add_argument('-t', '--test', action='store_true', default=False,
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 

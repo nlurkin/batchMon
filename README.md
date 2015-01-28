@@ -31,7 +31,7 @@ client retrieve the information.
 
 batchMon.py Usage
 --------------
-batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k]
+batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k] [--limit N]
 				[(-c CONFIG | -l LOAD)] [-s]
 
 optional arguments:
@@ -40,6 +40,9 @@ optional arguments:
 	-t, --test			When restarting a series of job, for each job 
 							test if the output file already exists. If yes, 
 							skip the job (do not regenerate existing output files)
+	--limit	N			Limit on concurrently active (RUN or PEND) jobs 
+							(default=-1: no limit). This is not a strict limit as
+							there is a delay between submitting and monitoring.
 	-n NAME, --name 	Name of the batch
 	-k, --keep			Do not delete the LXBATCH output (LSFJOB_xxxxxxx)
 	-c CONFIG, --config Configuration file to use (new batch)
