@@ -26,21 +26,21 @@ class JobServer:
     #==================
     # Called by client
     #==================
-    def addBatch(self, cardFile, name, queue, test, keep):
+    def addBatch(self, cardFile, name, queue, test, keep, limit):
         printDebug(3, "Adding new batch %s" % name)
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep)
+        batch = Monitor2(keep, limit)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
     
-    def loadBatch(self, jsonFile, name, keep):
+    def loadBatch(self, jsonFile, name, keep, limit):
         printDebug(3, "Loading new batch %s from %s" % (name, jsonFile))
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep)
+        batch = Monitor2(keep, limit)
         batch.loadBatch(jsonFile)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
         

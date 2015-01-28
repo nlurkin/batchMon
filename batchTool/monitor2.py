@@ -48,18 +48,20 @@ class Monitor2:
     Main class for monitoring jobs
     '''
 
-    def __init__(self, keep):
+    def __init__(self, keep, limit):
         '''
         Constructor
         '''
         self.submitList = []
         self.reSubmit = []
         self.keepOutput = keep
+        self.jobsLimit = int(limit)
         self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
         self.submitting = False
         self.currentlyChecking = False
+        self.activeJobs = 0
     
     def newBatch(self, cfgFile, batchName, queue, test):
         printDebug(3, "Monitor creating new batch")
@@ -77,56 +79,51 @@ class Monitor2:
     
     def submit(self, job):
         printDebug(3, "Monitor submitting job")
+        
+        #Create the bsub command
         cmd = ["bsub -q " + self.config.queue]
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
-
+        
+        #Run the command with timeout
         subOutput = subCommand(cmd, job.script, 10).Run()
         
+        #If failed, return
         if subOutput==None:
             return
-
+        
+        #Gather information about the job that was created (id + queue)
         m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
         if m:
             job.jobID = m.group(1)
             job.queue = m.group(2)
             job.attempts += 1
+            #Update the job with the information
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
     
     def generateJobs(self):
         printDebug(3, "Monitor generating jobs")
-        #Signal a submit is ongoing (block other submit threads to start for the same batch) 
         self.submitting = True
-        
-        #Check if the monitor itself has some jobs to re-generate (submitList != 0)
         if len(self.submitList)==0:
-            #No personal jobs to create
-            #Gather all jobs from the config that have never been generated (attempts=-1)
             subList = [job for job in self.config.jobsList if job.attempts==-1]
         else:
-            #Some jobs to resubmit, we only have their index. Get them from the config
             subList = [self.config.jobsList[i] for i in self.submitList]
-            #Free the submitList for further jobs  
-            self.submitList = []
         for job in subList:
             yield job
-        
-        #Notify that we are not submitting anymore. New threads are free to restart submitting if needed. 
+            if self.activeJobs>=self.jobsLimit:
+                break
+        self.submitList = []
         self.submitReady = False
         self.submitting = False
     
     def reSubmitFailed(self):
         printDebug(3, "Monitor resubmitting failed jobs")
-        #Request config to reset the attempts and notify that jobs are ready
         self.config.resetFailed()
         self.submitReady = True
     
     def monitor(self):
-        #Check that we are not already checking in a different thread
         if not self.currentlyChecking:
-            #Notify others that a monitor procedure is ongoing.
             self.currentlyChecking = True
-            #Check final job or regular jobs?
             if not self.checkFinalize():
                 self.monitorNormal()
             else:
@@ -134,36 +131,33 @@ class Monitor2:
             self.currentlyChecking = False
     
     def monitorNormal(self):
-        
-        #Run the bjobs command and get the output
         cmd = ["bjobs -a"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
-            
-        #Read output (one job per line) and parse it to identify the job and get its status
+        
+        self.activeJobs = 0
         for line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
-                #Update job in config. Might not exist, we don't care.
-                redo,index = self.config.updateJob(m.group(1), {"status":m.group(2)}, self.keepOutput)
+                lxbatchStatus = m.group(2)
+                if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
+                    self.activeJobs += 1 
+                redo,index = self.config.updateJob(m.group(1), {"status":lxbatchStatus}, self.keepOutput)
                 if redo:
-                    #Job has exited and config considers that the job can be resubmitted
                     self.reSubmit.append(index)
         
-        #If we are not currently submitting and we have jobs to resubmit, add them to the
-        # submitList and notify that jobs are ready.
         if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
             self.submitList.extend(self.reSubmit[:])
             self.reSubmit = []
-    
+
+            
     def submitInit(self):
         printDebug(3, "Monitor initial submit")
         self.config.enableNew()
         self.submitReady = True
     
     def checkFinalize(self):
-        #Submit final job if everything else is over
         if self.config.finalizeStage==0:
             if self.config.finalJob==None:
                 self.config.finalizeStage=2
@@ -182,7 +176,6 @@ class Monitor2:
         return self.config.finalizeStage>=0
     
     def monitorFinal(self):
-        #Monitor final job
         cmd = ["bjobs -a"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
