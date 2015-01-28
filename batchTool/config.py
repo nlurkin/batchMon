@@ -175,13 +175,9 @@ fileList:
 	def load(self, jsonFile):
 		'''
 		Load a json file for an existing batch
-		FIXME: Not working anymore in server
 		'''
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
-			#xxx = finalBatchJob("")
-			#xxx.__dict__ = self.finalJob
-			#self.finalJob = xxx
 			self.jobsList = []
 			for job in jobsList:
 				jsonstring = job.replace("'", '"').replace("None", 'null')
@@ -191,7 +187,6 @@ fileList:
 	def save(self, fileName):
 		'''
 		Save batch in json
-		FIXME: Not working anymore in server
 		'''
 		with open(fileName, "wb") as f:
 			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
