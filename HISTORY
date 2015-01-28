@@ -1,3 +1,12 @@
+4.0
+---
+	- Add job grouping feature. New fields in config file:
+		 jobsGrouping: grouping factor
+	  New $-parameters:
+		 fileName (formal signification changes): first file of the input list
+		 fileNameArr[n]: nth file of the input list
+		 fileList: full list of input files separated by \n 
+
 3.0
 ---
 	- Do not resubmit when initial submit is still ongoing (resubmit were never taken)
