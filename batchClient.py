@@ -113,6 +113,8 @@ def argParser():
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
                     help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
+    parser.add_argument('--limit', action='store', default="-1", 
+                    help="Limit on concurrently running jobs (default=-1: no limit)")
     parser.add_argument('-t', '--test', action='store_true', default=False,
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
@@ -142,7 +144,7 @@ def argParser():
         try:
             if not os.path.isabs(args.config):
                 args.config = os.getcwd()+"/"+args.config
-            server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()
@@ -150,7 +152,7 @@ def argParser():
         try:
             if not os.path.isabs(args.load):
                 args.load = os.getcwd()+"/"+args.load
-            server.loadBatch(args.load, args.name, args.keep)
+            server.loadBatch(args.load, args.name, args.keep, args.limit)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())        
             raise Exception()

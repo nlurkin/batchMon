@@ -48,18 +48,20 @@ class Monitor2:
     Main class for monitoring jobs
     '''
 
-    def __init__(self, keep):
+    def __init__(self, keep, limit):
         '''
         Constructor
         '''
         self.submitList = []
         self.reSubmit = []
         self.keepOutput = keep
+        self.jobsLimit = limit
         self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
         self.submitting = False
         self.currentlyChecking = False
+        self.activeJobs = 0
     
     def newBatch(self, cfgFile, batchName, queue, test):
         printDebug(3, "Monitor creating new batch")
@@ -77,20 +79,26 @@ class Monitor2:
     
     def submit(self, job):
         printDebug(3, "Monitor submitting job")
+        
+        #Create the bsub command
         cmd = ["bsub -q " + self.config.queue]
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
-
+        
+        #Run the command with timeout
         subOutput = subCommand(cmd, job.script, 10).Run()
         
+        #If failed, return
         if subOutput==None:
             return
-
+        
+        #Gather information about the job that was created (id + queue)
         m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
         if m:
             job.jobID = m.group(1)
             job.queue = m.group(2)
             job.attempts += 1
+            #Update the job with the information
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
     
     def generateJobs(self):
@@ -102,11 +110,11 @@ class Monitor2:
             subList = [self.config.jobsList[i] for i in self.submitList]
         for job in subList:
             yield job
+            if self.activeJobs>=self.jobsLimit:
+                break
         self.submitList = []
         self.submitReady = False
         self.submitting = False
-
-
     
     def reSubmitFailed(self):
         printDebug(3, "Monitor resubmitting failed jobs")
@@ -126,11 +134,15 @@ class Monitor2:
         cmd = ["bjobs -a"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
-            
+        
+        self.activeJobs = 0
         for line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
-                redo,index = self.config.updateJob(m.group(1), {"status":m.group(2)}, self.keepOutput)
+                lxbatchStatus = m.group(2)
+                if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
+                    self.activeJobs += 1 
+                redo,index = self.config.updateJob(m.group(1), {"status":lxbatchStatus}, self.keepOutput)
                 if redo:
                     self.reSubmit.append(index)
         
