@@ -101,11 +101,12 @@ def mainLoop():
     pyroDaemon.close()
 
 
-#Starting namespace server
 def setNS():
+    '''
+    Starting namespace server
+    '''
     global nsDaemon, broadCastServer
     
-    #nameServerDaemon = Pyro4.naming.locateNS()
     my_ip = Pyro4.socketutil.getIpAddress(None, workaround127=True)
     nameserverUri, nsDaemon, broadCastServer = Pyro4.naming.startNS(host=my_ip)
     assert broadCastServer is not None, "expect a broadcast server to be created"
@@ -113,12 +114,13 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "w") as f:
     with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
         f.write(my_ip)
 
-#Starting batch server and associated pyro daemon
 def createServer():
+    '''
+    Starting batch server and associated pyro daemon
+    '''
     global bServer, pyroDaemon
     # create a Pyro daemon
     pyroDaemon = Pyro4.core.Daemon(host=socket.gethostname())
@@ -133,7 +135,6 @@ def createServer():
     
     return serveruri
 
-#Register server with name server
 def registerServer(serveruri):
     global nsDaemon 
     nsDaemon.nameserver.register("castor.jobServer", serveruri)

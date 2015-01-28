@@ -13,6 +13,7 @@ __version__ = '3.0'
 try:
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
 except ImportError:
+    #Compatibility with older version of python that does not have argpase built-in
     from batchTool.argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 import curses
@@ -36,7 +37,6 @@ def mainLoop():
             pyroSockets = set(pyroDaemon.sockets)
             rs = []  # only the broadcast server is directly usable as a select() object
             rs.extend(pyroSockets)
-            #rs.extend()
             rs, _, _ = select.select(rs, [], [], 0.1)
             eventsForDaemon = []
             
@@ -49,30 +49,39 @@ def mainLoop():
             
             ret,name = client.mainLoop()
             
+            # x = navigation code
+            # 10x = server calls
             if ret==-1:
+                #Disconnect from a batch
                 server.disconnectClient(name, serveruri)
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif ret== +1 and name!=None:
+                #Connect to a batch
                 registerClient(name)
             elif ret==-100 and name!=None:
+                #Remove a batch
                 server.removeBatch(name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif ret==-101:
+                #Kill the server
                 server.disconnectClient(name, serveruri)
                 server.stop()
                 break
             elif ret==+100:
+                #Reset failed jobs
                 server.resubmitFailed(name)
             elif ret==+101:
+                #Initial submit
                 server.submitInit(name)
             elif ret==+102:
+                #Invert keep output
                 header = server.invertKeepOutput(name)
                 client.displayHeader(header)
-            
-
+        
         except KeyboardInterrupt:
+            #Quit the client
             break
             
     server.disconnectClient(client.getName(), serveruri)
@@ -80,8 +89,10 @@ def mainLoop():
 
 def registerClient(name):
     global client, serveruri
+    #Register the client and get basic info from server in return
     startTime, headers, totalJobs, summary = server.registerClient(name, serveruri)
     
+    #Display them
     client.setStartTime(startTime)
     client.displayHeader(headers)
     client.setTotalJobs(totalJobs)
@@ -97,11 +108,6 @@ def mainInit(scr=None):
     
     l = server.getBatchList()
     client.displayBatchList(l)
-    
-    #startTime, headers = server.registerClient("xxx", serveruri)
-    
-    #client.setStartTime(startTime)
-    #client.displayHeader(headers)
     
     mainLoop()
 
@@ -129,8 +135,7 @@ def argParser():
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
-
-    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
+    
     with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
         ip = f.readline()
     print ip
@@ -138,6 +143,8 @@ def argParser():
     uri = nameserver.lookup("castor.jobServer")
     server = Pyro4.Proxy(uri)
     
+    #Always check if path is absolute or not. Server is waiting for absolute path (or relative to server).
+    #Add new batch
     if args.config:
         try:
             if not os.path.isabs(args.config):
@@ -146,6 +153,7 @@ def argParser():
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()
+    #Load new batch
     elif args.load:
         try:
             if not os.path.isabs(args.load):
@@ -154,6 +162,7 @@ def argParser():
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())        
             raise Exception()
+    #Do the initial submit if requested
     if args.submit:
         server.submitInit(args.name)
         return 
