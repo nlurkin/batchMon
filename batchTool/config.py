@@ -220,8 +220,6 @@ fileList:
 		dico["outputDir"] = self.outputDir
 		dico["outputFile"] = self.outputFile
 		
-		print dico
-		
 		return dico
 	
 	def _testOutputFile(self, index):
