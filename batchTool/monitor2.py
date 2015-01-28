@@ -55,7 +55,7 @@ class Monitor2:
         self.submitList = []
         self.reSubmit = []
         self.keepOutput = keep
-        self.jobsLimit = limit
+        self.jobsLimit = int(limit)
         self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
