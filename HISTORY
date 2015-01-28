@@ -5,7 +5,10 @@
 	  New $-parameters:
 		 fileName (formal signification changes): first file of the input list
 		 fileNameArr[n]: nth file of the input list
-		 fileList: full list of input files separated by \n 
+		 fileList: full list of input files separated by \n
+	- Add --limit option that sets an upper limit for the number of jobs concurrently
+		in a RUN or PEND state. Not a hard limit as there is a delay between submission
+		and monitoring.
 
 3.0
 ---
