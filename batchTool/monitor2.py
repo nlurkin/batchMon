@@ -110,7 +110,7 @@ class Monitor2:
             subList = [self.config.jobsList[i] for i in self.submitList]
         for job in subList:
             yield job
-            if self.activeJobs>=self.jobsLimit:
+            if self.jobsLimit>0 and self.activeJobs>=self.jobsLimit:
                 break
         self.submitList = []
         self.submitReady = False
