@@ -252,7 +252,8 @@ fileList:
 					#Else create only if output file does not exist
 					if (not test) or (group>0 or self._testOutputFile(i)):
 						if skip:
-							if (group+1)==self.jobsGroup:
+							group += 1
+							if group==self.jobsGroup:
 								skip = False
 								group = 0
 								i += 1
@@ -272,7 +273,7 @@ fileList:
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
-			if group>0:
+			if group>0 and job!=None:
 				self.jobsList.append(job)
 		self.jobNumber = len(self.jobsList)
 		
