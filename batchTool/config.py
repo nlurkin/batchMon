@@ -207,7 +207,7 @@ fileList:
 			for i,f in enumerate(fileName):
 				dico["fileNameArr[%s]" % i] = f
 				fileList = fileList + ("%s\n" % (f)) 
-			dico["fileList"] = fileList
+			dico["fileList"] = fileList.rstrip("\n")
 			dico["fileName"] = fileName[0]
 		else:
 			dico["fileList"] = ""
@@ -224,6 +224,7 @@ fileList:
 		
 		#Output file is the outputDir + replaced template file name
 		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
+		#print path
 		if FSSelector.exists(path):
 			return False
 		return True
@@ -250,6 +251,7 @@ fileList:
 				if i>=self.startIndex:
 					#Always create the job if we don't test
 					#Else create only if output file does not exist
+					#print "Test %s exists=%s" % (i,self._testOutputFile(i))
 					if (not test) or (group>0 or self._testOutputFile(i)):
 						if skip:
 							group += 1
@@ -262,14 +264,20 @@ fileList:
 							job = BatchJob(None, i, j)
 						job.addInputFile(line.strip('\n'))
 						group += 1
+						#print self.jobsGroup
 						if group==self.jobsGroup:
 							self.jobsList.append(job)
 							group = 0
 							j += 1
 							i += 1
+							job = None
 					else:
 						skip = True
 						group += 1
+						if group==self.jobsGroup:
+							skip = False
+							group = 0
+							i += 1
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
