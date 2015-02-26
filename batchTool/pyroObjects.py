@@ -159,22 +159,25 @@ class JobServer:
             printDebug(3, "["+cThread.name+"] Number of jobs in Ready state: " + str(batch["monitor"].config.getJobsNumberReady()))
             
             #Go through all the jobs that are ready and submit them
+            jList = [];
             for i, job in enumerate(batch["monitor"].generateJobs()):
                         printDebug(3, "["+cThread.name+"] Generate job " + str(i))
-                        batch["monitor"].submit(job)
-                        printDebug(3, "["+cThread.name+"] acquire mutex")
+                        jList.append(job)
                         
-                        #Notify the clients that the job was submitted
-                        if self.mutex.acquire():
-                            try:
-                                for clients in batch["clients"]:
-                                    clients.displayJobSent(job.jobID, job.index, i)
-                            except Exception:
-                                printDebug(1, "["+cThread.name+"] Exception:")
-                                printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
-                            finally:
-                                printDebug(3, "["+cThread.name+"] release mutex")
-                                self.mutex.release()
+            batch["monitor"].submit(jList)
+            printDebug(3, "["+cThread.name+"] acquire mutex")
+                        
+            #Notify the clients that the job was submitted
+            if self.mutex.acquire():
+                try:
+                    for clients in batch["clients"]:
+                        clients.displayJobSent(job.jobID, job.index, 0)
+                except Exception:
+                    printDebug(1, "["+cThread.name+"] Exception:")
+                    printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
+                finally:
+                    printDebug(3, "["+cThread.name+"] release mutex")
+                    self.mutex.release()
         except Exception:
             printDebug(1, "["+cThread.name+"] Exception")
             printDebug(1, "".join(Pyro4.util.getPyroTraceback()))

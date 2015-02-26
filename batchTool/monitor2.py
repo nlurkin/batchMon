@@ -77,13 +77,20 @@ class Monitor2:
         printDebug(3, "Saving batch")
         self.config.save(jsonFile)
     
-    def submit(self, job):
+    def submit(self, jobs):
         printDebug(3, "Monitor submitting job")
+
+        indexArray = []
+        for job in jobs:
+            indexArray.append(job.jobSeq)
         
         #Create the bsub command
         cmd = ["bsub -q " + self.config.queue]
+        cmd[0] = cmd[0] + " -J \"" + self.config.name + self.formatArray(indexArray) + "\""
         if self.config.requirement:
             cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
+        
+        
         
         #Run the command with timeout
         subOutput = subCommand(cmd, job.script, 10).Run()
@@ -94,9 +101,15 @@ class Monitor2:
         
         #Gather information about the job that was created (id + queue)
         m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
+        jobID = "";
+        queue = "";
         if m:
-            job.jobID = m.group(1)
-            job.queue = m.group(2)
+            jobID = m.group(1)
+            queue = m.group(2)
+        
+        for job in jobs:
+            job.jobID = jobID
+            job.queue = queue
             job.attempts += 1
             #Update the job with the information
             self.config.updateCorrespondance(job.jobID, job.jobSeq)
@@ -137,12 +150,13 @@ class Monitor2:
         
         self.activeJobs = 0
         for line in monOutput.splitlines():
-            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
+            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*" + self.config.name + "\[([0-9]+)\]", line)
             if m:
                 lxbatchStatus = m.group(2)
+                jobArrIndex = m.group(3)
                 if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
                     self.activeJobs += 1 
-                redo,index = self.config.updateJob(m.group(1), {"status":lxbatchStatus}, self.keepOutput)
+                redo,index = self.config.updateJob(m.group(1), jobArrIndex, {"status":lxbatchStatus}, self.keepOutput)
                 if redo:
                     self.reSubmit.append(index)
         
