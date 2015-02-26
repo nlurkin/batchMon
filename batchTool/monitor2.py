@@ -112,7 +112,8 @@ class Monitor2:
             job.queue = queue
             job.attempts += 1
             #Update the job with the information
-            self.config.updateCorrespondance(job.jobID, job.jobSeq)
+            self.config.updateCorrespondance("%s.%i" % (job.jobID, job.jobSeq+1), job.jobSeq)
+        return jobID
     
     def generateJobs(self):
         printDebug(3, "Monitor generating jobs")
@@ -151,12 +152,14 @@ class Monitor2:
         self.activeJobs = 0
         for line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*" + self.config.name + "\[([0-9]+)\]", line)
+            
             if m:
                 lxbatchStatus = m.group(2)
                 jobArrIndex = m.group(3)
+                
                 if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
                     self.activeJobs += 1 
-                redo,index = self.config.updateJob(m.group(1), jobArrIndex, {"status":lxbatchStatus}, self.keepOutput)
+                redo,index = self.config.updateJob("%s.%s" % (m.group(1), jobArrIndex), int(jobArrIndex), {"status":lxbatchStatus}, self.keepOutput)
                 if redo:
                     self.reSubmit.append(index)
         
@@ -194,7 +197,7 @@ class Monitor2:
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
     
-        for line in monOutput.splitlines():
+        prfor line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
                 self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
@@ -208,6 +211,7 @@ class Monitor2:
         currRun = -1
         
         listRuns = []
+        idList.sort()
         for arrId in idList:
             if startRun==-1:
                 startRun = arrId
@@ -216,8 +220,21 @@ class Monitor2:
             if arrId == currRun+1:
                 currRun = arrId
             else:
-                listRuns.append(startRun + "-" + arrId)
+                if startRun==arrId:
+                    listRuns.append("%i" % (startRun+1))
+                else:
+                    listRuns.append("%i-%i" % (startRun+1, arrId+1))
                 startRun = -1
                 currRun = -1
+        if startRun==currRun and startRun!=-1:
+            listRuns.append("%i" % (startRun+1))
+        else:
+            listRuns.append("%i-%i" % (startRun+1, currRun+1))
         
-        print listRuns
+        arrString = ""
+        for el in listRuns:
+            arrString = arrString + el + ","
+        
+        arrString = "[" + arrString[:-1] + "]"
+        return arrString
+        

@@ -163,15 +163,15 @@ class JobServer:
             for i, job in enumerate(batch["monitor"].generateJobs()):
                         printDebug(3, "["+cThread.name+"] Generate job " + str(i))
                         jList.append(job)
-                        
-            batch["monitor"].submit(jList)
+            
+            lsfID = batch["monitor"].submit(jList)
             printDebug(3, "["+cThread.name+"] acquire mutex")
                         
             #Notify the clients that the job was submitted
             if self.mutex.acquire():
                 try:
                     for clients in batch["clients"]:
-                        clients.displayJobSent(job.jobID, job.index, 0)
+                        clients.displayJobSent(lsfID, -1, len(jList)-1)
                 except Exception:
                     printDebug(1, "["+cThread.name+"] Exception:")
                     printDebug(1, "".join(Pyro4.util.getPyroTraceback()))

@@ -407,7 +407,7 @@ fileList:
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + jobArraySeq
+			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + str(jobArraySeq)
 			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output

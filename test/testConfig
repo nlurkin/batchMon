@@ -2,12 +2,12 @@ executable = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/test.sh
 listFile = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/testList.list
 outputDir = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/outputTest
 maxJobs = 5
-outputFile = job_test$jobIndex.root
-maxAttempts=1
+outputFile = job_test${LSB_JOBINDEX}.root
+maxAttempts=2
 
-optTemplate = $outputFile
+optTemplate = $outputFile ${LSB_JOBINDEX}
 
-preExecute = source ~/env.sh
+preExecute = source ~/env32.sh
 
 postExecute = ls
 	pwd
