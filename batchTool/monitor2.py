@@ -202,3 +202,22 @@ class Monitor2:
     def invertKeepOutput(self):
         self.keepOutput = not self.keepOutput
         
+    
+    def formatArray(self, idList):
+        startRun = -1
+        currRun = -1
+        
+        listRuns = []
+        for arrId in idList:
+            if startRun==-1:
+                startRun = arrId
+                currRun = arrId
+                continue
+            if arrId == currRun+1:
+                currRun = arrId
+            else:
+                listRuns.append(startRun + "-" + arrId)
+                startRun = -1
+                currRun = -1
+        
+        print listRuns
