@@ -56,7 +56,7 @@ class JobServer:
             self.mutex.acquire()
             client = Pyro4.Proxy(clientUri)
             #Set the timeout for the calls. Client might not be running anymore and cannot block server indefinitely. 
-            client._pyroTimeout = 5
+            client._pyroTimeout = 1
             
             self.listBatch[name]["clients"].append(client)
             
