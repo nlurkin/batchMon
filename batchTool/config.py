@@ -182,7 +182,6 @@ fileList:
 		self._readInputList(test)
 		if arrayed:
 			self._generateScriptArrayed()
-			sys.exit()
 		else:
 			self._generateScript()
 	
@@ -218,6 +217,27 @@ fileList:
 				fileList = fileList + ("%s\n" % (f)) 
 			dico["fileList"] = fileList.rstrip("\n")
 			dico["fileName"] = fileName[0]
+		else:
+			dico["fileList"] = ""
+			dico["fileName"] = None
+		dico["outputDir"] = self.outputDir
+		dico["outputFile"] = self.outputFile
+		
+		return dico
+	
+	def _buildSearchMapArrayed(self, step, fileName):
+		'''
+		Build map to replace all $-parameters
+		'''
+		dico = dict(self._templateDico)
+		dico["jobIndex"] = "${LSB_JOBINDEX}"
+		if fileName:
+			fileList = ""
+			for i,f in enumerate(fileName):
+				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}" % (i+1, step)
+				fileList = fileList + ("${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}\n" % (i+1, step))
+			dico["fileList"] = fileList.rstrip("\n")
+			dico["fileName"] = "$fileNameArr[0]"
 		else:
 			dico["fileList"] = ""
 			dico["fileName"] = None
@@ -386,9 +406,9 @@ fileList:
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
 	
 	def _generateBashArray(self):
-		listString = ""
+		listString = "fileName[0]=aligning\n"
 		for i,f in enumerate(self.inputFilesList):
-			listString = listString + "fileName[%i]=%s\n" % (i, f)
+			listString = listString + "fileName[%i]=%s\n" % (i+1, f)
 		
 		return listString
 		
@@ -401,17 +421,19 @@ fileList:
 		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		sFileList = self._generateBashArray()
 		indexList = range(0,self.jobNumber)
-		for i in indexList:
+		
+		if len(indexList)>0:
 			#Generate the $-parameter dictionary
-			dico = self._buildSearchMap(self.jobsList[i].index, self.jobsList[i].inputFile)
+			dico = self._buildSearchMapArrayed(len(self.jobsList[0].inputFile), self.jobsList[0].inputFile)
 			#Apply the dictionary for the 3 parts of the script
 			pre = self._readAndReplace(self.preExecute, dico)
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
 			#Set the script
-			self.jobsList[i].script = sReturn % (sFileList, pre, command, post)
+			self.jobsList[0].script = sReturn % (sFileList, pre, command, post)
+		for i in indexList:
+			self.jobsList[i].script = self.jobsList[0].script
 			
-		print self.jobsList[0].script
 		#Create the final job script if exists
 		if len(indexList)>0 and self.finalJob:
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)

@@ -66,7 +66,7 @@ class Monitor2:
     
     def newBatch(self, cfgFile, batchName, queue, test):
         printDebug(3, "Monitor creating new batch")
-        self.config.initCardFile(cfgFile, batchName, queue, test)
+        self.config.initCardFile(cfgFile, batchName, queue, test, self.arrayed)
         self.submitReady = False
 
     def loadBatch(self, jsonFile):
@@ -118,6 +118,8 @@ class Monitor2:
         
         
         #Run the command with timeout
+        print "Using script"
+        print job.script
         subOutput = subCommand(cmd, job.script, 10).Run()
         
         #If failed, return

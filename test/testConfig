@@ -2,13 +2,16 @@ executable = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/test.sh
 listFile = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/testList.list
 outputDir = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/outputTest
 maxJobs = 5
-outputFile = job_test${LSB_JOBINDEX}.root
+outputFile = job_test$jobIndex.root
 maxAttempts=2
+jobsGrouping=2
 
-optTemplate = $outputFile ${LSB_JOBINDEX} $fileName
+optTemplate = $outputFile $jobIndex $fileName
 
 preExecute = source ~/env32.sh
+	echo "$fileList"
+	echo $fileNameArr[1]
 
 postExecute = ls
 	pwd
-	mv $outputFile $outputDir/$outputFile
+	echo "mv $outputFile $outputDir/$outputFile"
