@@ -3,12 +3,15 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
-import SimpleConfigParser
 import json
 import os
 import shutil
+import sys
 import time
+
 import FSSelector
+import SimpleConfigParser
+
 
 class BatchToolExceptions:
 	'''
@@ -155,9 +158,11 @@ fileList:
 		self.jobsList = []
 		
 		self.jobsGroup = 1
+		
+		self.inputFilesList = []
 
 	
-	def initCardFile(self, cardFile, name, queue, test=False):
+	def initCardFile(self, cardFile, name, queue, test=False, arrayed=False):
 		'''
 		Set the card file for the batch. Read it and generate the jobs.
 		'''
@@ -175,7 +180,11 @@ fileList:
 			self._checkOutputDir()
 			
 		self._readInputList(test)
-		self._generateScript()
+		if arrayed:
+			self._generateScriptArrayed()
+			sys.exit()
+		else:
+			self._generateScript()
 	
 	def load(self, jsonFile):
 		'''
@@ -247,6 +256,7 @@ fileList:
 			job = None
 			skip = False
 			for line in f:
+				self.inputFilesList.append(line.strip('\n'))
 				#If start index specified, skip the first startIndex groups
 				if i>=self.startIndex:
 					#Always create the job if we don't test
@@ -375,6 +385,38 @@ fileList:
 		if len(indexList)>0 and self.finalJob:
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
 	
+	def _generateBashArray(self):
+		listString = ""
+		for i,f in enumerate(self.inputFilesList):
+			listString = listString + "fileName[%i]=%s\n" % (i, f)
+		
+		return listString
+		
+		
+	def _generateScriptArrayed(self):
+		'''
+		Generate scripts for all jobs
+		'''
+		
+		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
+		sFileList = self._generateBashArray()
+		indexList = range(0,self.jobNumber)
+		for i in indexList:
+			#Generate the $-parameter dictionary
+			dico = self._buildSearchMap(self.jobsList[i].index, self.jobsList[i].inputFile)
+			#Apply the dictionary for the 3 parts of the script
+			pre = self._readAndReplace(self.preExecute, dico)
+			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
+			post = self._readAndReplace(self.postExecute, dico)
+			#Set the script
+			self.jobsList[i].script = sReturn % (sFileList, pre, command, post)
+			
+		print self.jobsList[0].script
+		#Create the final job script if exists
+		if len(indexList)>0 and self.finalJob:
+			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
+			
+			
 	def __str__(self):
 		'''
 		String representation
