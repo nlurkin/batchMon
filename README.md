@@ -93,9 +93,9 @@ Others are not:
 The fields marked as "templated" can use of the following placeholder that
 will be replaced when submitting the job:
 	o $jobIndex : 		will be replaced by the index of the job (=file index
-							in the list of files)
+							in the list of files) -- not working with arrayed submitting
 	o $fileNameArr[n] :	will be replaced by the file name of the nth file in
-							the list of input files of the job	
+							the list of input files of the job	-- not working with arrayed submitting
 	o $fileName :  		will be replaced by the file name of the first input 
 							file of the job
 	o $fileList :		will be replaced by a list of the input files name

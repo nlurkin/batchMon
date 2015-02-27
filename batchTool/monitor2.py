@@ -197,7 +197,7 @@ class Monitor2:
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
     
-        prfor line in monOutput.splitlines():
+        for line in monOutput.splitlines():
             m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
             if m:
                 self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})

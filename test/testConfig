@@ -5,7 +5,7 @@ maxJobs = 5
 outputFile = job_test${LSB_JOBINDEX}.root
 maxAttempts=2
 
-optTemplate = $outputFile ${LSB_JOBINDEX}
+optTemplate = $outputFile ${LSB_JOBINDEX} $fileName
 
 preExecute = source ~/env32.sh
 
