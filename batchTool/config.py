@@ -230,7 +230,7 @@ fileList:
 		Build map to replace all $-parameters
 		'''
 		dico = dict(self._templateDico)
-		dico["jobIndex"] = "${LSB_JOBINDEX}"
+		dico["jobIndex"] = "$((${LSB_JOBINDEX}-1))"
 		if fileName:
 			fileList = ""
 			for i,f in enumerate(fileName):

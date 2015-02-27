@@ -118,8 +118,6 @@ class Monitor2:
         
         
         #Run the command with timeout
-        print "Using script"
-        print job.script
         subOutput = subCommand(cmd, job.script, 10).Run()
         
         #If failed, return
@@ -196,7 +194,7 @@ class Monitor2:
             self.reSubmit = []
     
     def monitorArrayed(self):
-        cmd = ["bjobs -a"]
+        cmd = ["bjobs -wd"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
         
