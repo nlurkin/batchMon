@@ -167,7 +167,7 @@ class JobServer:
                         printDebug(3, "["+cThread.name+"] Generate job " + str(i))
                         jList.append(job)
             
-            lsfID = batch["monitor"].submit(jList)
+            lsfID = batch["monitor"].submitArrayed(jList)
             printDebug(3, "["+cThread.name+"] acquire mutex")
                         
             #Notify the clients that the job was submitted
