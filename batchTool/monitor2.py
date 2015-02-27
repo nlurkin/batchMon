@@ -48,7 +48,7 @@ class Monitor2:
     Main class for monitoring jobs
     '''
 
-    def __init__(self, keep, limit):
+    def __init__(self, keep, limit, arrayed):
         '''
         Constructor
         '''
@@ -62,6 +62,7 @@ class Monitor2:
         self.submitting = False
         self.currentlyChecking = False
         self.activeJobs = 0
+        self.arrayed = arrayed
     
     def newBatch(self, cfgFile, batchName, queue, test):
         printDebug(3, "Monitor creating new batch")
@@ -77,7 +78,31 @@ class Monitor2:
         printDebug(3, "Saving batch")
         self.config.save(jsonFile)
     
-    def submit(self, jobs):
+    def submit(self, job):
+        printDebug(3, "Monitor submitting job")
+        
+        #Create the bsub command
+        cmd = ["bsub -q " + self.config.queue]
+        if self.config.requirement:
+            cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
+        
+        #Run the command with timeout
+        subOutput = subCommand(cmd, job.script, 10).Run()
+        
+        #If failed, return
+        if subOutput==None:
+            return
+        
+        #Gather information about the job that was created (id + queue)
+        m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
+        if m:
+            job.jobID = m.group(1)
+            job.queue = m.group(2)
+            job.attempts += 1
+            #Update the job with the information
+            self.config.updateCorrespondance(job.jobID, job.jobSeq)
+    
+    def submitArrayed(self, jobs):
         printDebug(3, "Monitor submitting job")
 
         indexArray = []
@@ -139,12 +164,36 @@ class Monitor2:
         if not self.currentlyChecking:
             self.currentlyChecking = True
             if not self.checkFinalize():
-                self.monitorNormal()
+                if self.arrayed:
+                    self.monitorArrayed()
+                else:
+                    self.monitorNormal()
             else:
                 self.monitorFinal()
             self.currentlyChecking = False
     
     def monitorNormal(self):
+        cmd = ["bjobs -a"]
+        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (monOutput, _) = subCmd.communicate()
+        
+        self.activeJobs = 0
+        for line in monOutput.splitlines():
+            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
+            if m:
+                lxbatchStatus = m.group(2)
+                if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
+                    self.activeJobs += 1 
+                redo,index = self.config.updateJob(m.group(1), {"status":lxbatchStatus}, self.keepOutput)
+                if redo:
+                    self.reSubmit.append(index)
+        
+        if self.submitting == False and len(self.reSubmit)>0:
+            self.submitReady = True
+            self.submitList.extend(self.reSubmit[:])
+            self.reSubmit = []
+    
+    def monitorArrayed(self):
         cmd = ["bjobs -a"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
@@ -159,7 +208,7 @@ class Monitor2:
                 
                 if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
                     self.activeJobs += 1 
-                redo,index = self.config.updateJob("%s.%s" % (m.group(1), jobArrIndex), int(jobArrIndex), {"status":lxbatchStatus}, self.keepOutput)
+                redo,index = self.config.updateJob("%s.%s" % (m.group(1), jobArrIndex), {"status":lxbatchStatus}, self.keepOutput, int(jobArrIndex))
                 if redo:
                     self.reSubmit.append(index)
         

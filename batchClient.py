@@ -125,6 +125,8 @@ def argParser():
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
+    parser.add_argument('-a', '--arrayed', action='store_true', default=False, 
+                    help="Generate jobs array")
     #parser.add_argument('-x', '--nocurse', action='store_true', 
     #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
@@ -151,7 +153,7 @@ def argParser():
         try:
             if not os.path.isabs(args.config):
                 args.config = os.getcwd()+"/"+args.config
-            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit)
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit, args.arrayed)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()

@@ -392,7 +392,7 @@ fileList:
 		#job["attempts"] = -2
 		return True
 	
-	def updateJob(self, jobID, jobArraySeq, dico, keep):
+	def updateJob(self, jobID, dico, keep, jobArraySeq=None):
 		'''
 		Update job with the information in the dico
 		'''
@@ -402,12 +402,17 @@ fileList:
 		#Does this job exist
 		if jobID in self.jobCorrespondance:
 			#Get the job index and the job itself
-			#jobSeq = self.jobCorrespondance[jobID]
-			jobSeq = jobArraySeq-1
+			if jobArraySeq==None:
+				jobSeq = self.jobCorrespondance[jobID]
+			else:
+				jobSeq = jobArraySeq-1
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + str(jobArraySeq)
+			if jobArraySeq==None:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
+			else:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + str(jobArraySeq)
 			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output
