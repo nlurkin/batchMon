@@ -45,7 +45,7 @@ def exists(path, preload):
     return ret==0
 
 def mkDir(path):
-    if not exists(path):
+    if not exists(path, False):
         return subprocess.call(["/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select", "mkdir", path])
 
 def rmTree(path):

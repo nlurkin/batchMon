@@ -194,7 +194,7 @@ class Monitor2:
             self.reSubmit = []
     
     def monitorArrayed(self):
-        cmd = ["bjobs -wd"]
+        cmd = ["bjobs -wa"]
         subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         (monOutput, _) = subCmd.communicate()
         
