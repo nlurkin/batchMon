@@ -350,6 +350,13 @@ class FileDisplay(object):
 		self.currentCursor -= 1
 		self.setStateChar(self.currentCursor, True)
 	
+	def goTo(self, index):
+		if not self.goCheck(index):
+			return
+		self.goReset()
+		self.currentCursor = index
+		self.setStateChar(self.currentCursor, True)
+	
 	def select(self):
 		if self.currentCursor in self.selected:
 			self.selected.remove(self.currentCursor)

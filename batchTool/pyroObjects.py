@@ -280,9 +280,11 @@ class DisplayClient(object):
         if headers!=None:
             self.screen.displayHeader(headers)
     
-    def displayBatchList(self, l):
+    def displayBatchList(self, l, index=None):
         self.batchList = l[:]
         self.screen.displayBatchList(l)
+        #if not index is None:
+        self.screen.batchList.goTo(self.screen.batchList.currentCursor)
     
     def getName(self):
         return self.batchName
@@ -304,6 +306,7 @@ class DisplayClient(object):
                 elif k == curses.KEY_UP:
                     self.screen.batchList.goUp()
                 elif k == curses.KEY_RIGHT:
+                    #currentCursor = 
                     return +1,self.selectBatch(self.screen.batchList.currentCursor)
                 elif k == curses.KEY_DC:
                     return -100, self.deleteBatch(self.screen.batchList.currentCursor)
