@@ -234,6 +234,7 @@ class DisplayClient(object):
         self.screen.setScreen(scr)
         self.batchList = []
         self.batchName = ""
+        self.lastIndex = -1
     
     #==================
     # Called by server
@@ -284,7 +285,7 @@ class DisplayClient(object):
         self.batchList = l[:]
         self.screen.displayBatchList(l)
         #if not index is None:
-        self.screen.batchList.goTo(self.screen.batchList.currentCursor)
+        self.screen.batchList.goTo(self.lastIndex)
     
     def getName(self):
         return self.batchName
@@ -306,10 +307,11 @@ class DisplayClient(object):
                 elif k == curses.KEY_UP:
                     self.screen.batchList.goUp()
                 elif k == curses.KEY_RIGHT:
-                    #currentCursor = 
-                    return +1,self.selectBatch(self.screen.batchList.currentCursor)
+                    self.lastIndex = self.screen.batchList.currentCursor
+                    return +1,self.selectBatch(self.lastIndex)
                 elif k == curses.KEY_DC:
-                    return -100, self.deleteBatch(self.screen.batchList.currentCursor)
+                    self.lastIndex = self.screen.batchList.currentCursor
+                    return -100, self.deleteBatch(self.lastIndex)
                 elif curses.unctrl(k) == "K":
                     #Kill the server
                     return -101, ""
