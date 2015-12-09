@@ -53,15 +53,15 @@ def mainLoop():
             # 10x = server calls
             if ret==-1:
                 #Disconnect from a batch
-                server.disconnectClient(name, serveruri)
+                server.disconnectClient(name['name'], serveruri)
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif ret== +1 and name!=None:
                 #Connect to a batch
-                registerClient(name)
+                registerClient(name['name'])
             elif ret==-100 and name!=None:
                 #Remove a batch
-                server.removeBatch(name)
+                server.removeBatch(name['name'])
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif ret==-101:
@@ -71,13 +71,13 @@ def mainLoop():
                 break
             elif ret==+100:
                 #Reset failed jobs
-                server.resubmitFailed(name)
+                server.resubmitFailed(name['name'])
             elif ret==+101:
                 #Initial submit
-                server.submitInit(name)
+                server.submitInit(name['name'])
             elif ret==+102:
                 #Invert keep output
-                header = server.invertKeepOutput(name)
+                header = server.invertKeepOutput(name['name'])
                 client.displayHeader(header)
         
         except KeyboardInterrupt:

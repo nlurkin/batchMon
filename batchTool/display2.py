@@ -301,7 +301,7 @@ class FileDisplay(object):
 		for f in bList:
 			self.fileListWindow.addstr(i, 2, "[ ] ")
 			self.fileListWindow.addnstr(f["name"], self.fieldsSize.nameField)
-			self.fileListWindow.addstr(i, self.fieldsSize.nameField, "{pending} {running} {failed} {finished}".format(f["name"]))
+			self.fileListWindow.addstr(i, self.fieldsSize.nameField, "{pending[value]} {running[value]} {failed[value]} {finished}".format(**f["stats"]))
 			i = i + 1
 		
 		self.listLength = len(bList)
