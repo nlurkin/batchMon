@@ -80,8 +80,8 @@ class JobServer:
     def getBatchList(self):
         printDebug(3, "Sending batch list")
         l = []
-        for name,_ in self.listBatch.iteritems():
-            l.append(name)
+        for name,obj in self.listBatch.iteritems():
+            l.append({'name':name, 'stats':obj["monitor"].config.getStatusStats()})
         return l
     
     def submitInit(self, name):
