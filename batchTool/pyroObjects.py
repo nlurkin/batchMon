@@ -312,6 +312,9 @@ class DisplayClient(object):
                 elif k == curses.KEY_DC:
                     self.lastIndex = self.screen.batchList.currentCursor
                     return -100, self.deleteBatch(self.lastIndex)
+                elif curses.unctrl(k) == "r":
+                    #Refresh the list of jobs
+                    return +5, ""
                 elif curses.unctrl(k) == "K":
                     #Kill the server
                     return -101, ""

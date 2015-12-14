@@ -59,6 +59,9 @@ def mainLoop():
             elif ret== +1 and name!=None:
                 #Connect to a batch
                 registerClient(name)
+            elif ret== +5:
+                l = server.getBatchList()
+                client.displayBatchList(l)
             elif ret==-100 and name!=None:
                 #Remove a batch
                 server.removeBatch(name)
@@ -139,11 +142,23 @@ def argParser():
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
-    
+   
+    serverFound = False
     with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
-        ip = f.readline()
-    print ip
-    nameserver = Pyro4.naming.locateNS(host=ip)
+        for ip in f:
+            print "Trying {0}".format(ip.rstrip())
+            try:
+                nameserver = Pyro4.naming.locateNS(host=ip.rstrip())
+            except Pyro4.errors.PyroError as p:
+                print "Server not found at {0}".format(ip.rstrip())
+            else:
+                serverFound = True
+            if serverFound:
+                break
+
+    if not serverFound:
+        print "No server found... Aborting"
+        sys.exit(0)
     uri = nameserver.lookup("castor.jobServer")
     server = Pyro4.Proxy(uri)
     
