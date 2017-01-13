@@ -194,7 +194,7 @@ fileList:
 			self.jobsList = []
 			for job in jobsList:
 				jsonstring = job.replace("'", '"').replace("None", 'null')
-				j = BatchJob(json.loads(jsonstring), None, None, None)
+				j = BatchJob(json.loads(jsonstring), None, None)
 				self.jobsList.append(j)
 	
 	def save(self, fileName):

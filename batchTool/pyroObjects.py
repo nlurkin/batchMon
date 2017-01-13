@@ -40,8 +40,8 @@ class JobServer:
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep, limit)
-        batch.loadBatch(jsonFile)
+        batch = Monitor2(keep, limit, True)
+        batch.loadBatch(str(jsonFile))
         self.listBatch[name] = {"monitor":batch, "clients":[]}
         
     def removeBatch(self, name):
