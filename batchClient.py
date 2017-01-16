@@ -7,6 +7,7 @@ Created on 27 Sep 2014
 batchClient can connect to a central batchServer instance. It can create new batches, 
 load existing batches and display monitoring informations sent by the server.
 '''
+from batchTool.display2 import DCommands
 
 __version__ = '3.0'
 
@@ -47,28 +48,28 @@ def mainLoop():
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
             
-            ret,name = client.mainLoop()
+            retCmd = client.mainLoop()
             
-            if ret==-1:
-                server.disconnectClient(name, serveruri)
+            if retCmd.command==DCommands.Back:
+                server.disconnectClient(retCmd.name, serveruri)
                 l = server.getBatchList()
                 client.displayBatchList(l)
-            elif ret== +1 and name!=None:
-                registerClient(name)
-            elif ret==-100 and name!=None:
-                server.removeBatch(name)
+            elif retCmd.command== DCommands.Select and retCmd.name!=None:
+                registerClient(retCmd.name)
+            elif retCmd.command==DCommands.Delete and retCmd.name!=None:
+                server.removeBatch(retCmd.name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
-            elif ret==-101:
-                server.disconnectClient(name, serveruri)
+            elif retCmd.command==DCommands.Kill:
+                server.disconnectClient(retCmd.name, serveruri)
                 server.stop()
                 break
-            elif ret==+100:
-                server.resubmitFailed(name)
-            elif ret==+101:
-                server.submitInit(name)
-            elif ret==+102:
-                header = server.invertKeepOutput(name)
+            elif retCmd.command==DCommands.Refresh:
+                server.resubmitFailed(retCmd.name)
+            elif retCmd.command==DCommands.Submit:
+                server.submitInit(retCmd.name)
+            elif retCmd.command==DCommands.Switch:
+                header = server.invertKeepOutput(retCmd.name)
                 client.displayHeader(header)
             
 
@@ -130,7 +131,6 @@ def argParser():
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
 
-    #with open("/afs/cern.ch/user/n/nlurkin/git/batchMon/ns.cfg", "r") as f:
     with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
         ip = f.readline()
     print ip

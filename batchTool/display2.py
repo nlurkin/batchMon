@@ -6,6 +6,20 @@ Created on 16 May 2014
 import curses
 import datetime
 
+class DCommands(object):
+    NoCMD      = 0
+    Select     = +1
+    Back       = -1
+    Delete     = -100
+    Kill       = -101
+    Refresh    = +100
+    Submit     = +101
+    Switch     = +102
+    
+    def __init__(self, Command, **kwargs):
+        self.command = Command
+        self.__dict__.update(kwargs)
+
 class Display2:
 	'''
 	Class for displaying things on screen

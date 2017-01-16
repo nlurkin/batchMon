@@ -11,7 +11,7 @@ import Pyro4
 
 from . import Monitor2, Display2
 from util import printDebug
-import time
+from batchTool.display2 import DCommands
 
 stopAll = False
 class JobServer:
@@ -164,6 +164,7 @@ class DisplayClient(object):
     """
     Display client. Pyro object connected by the server.
     """
+    
     def __init__(self, scr):
         self.startTime = None
         self.screen = Display2()
@@ -192,29 +193,26 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
-
-            if self.screen.displayList:
-                if k == curses.KEY_DOWN:
-                    self.screen.batchList.goDown()
-                elif k == curses.KEY_UP:
-                    self.screen.batchList.goUp()
-                elif k == curses.KEY_RIGHT:
-                    return +1,self.selectBatch(self.screen.batchList.currentCursor)
-                elif k == curses.KEY_DC:
-                    return -100, self.deleteBatch(self.screen.batchList.currentCursor)
-                elif curses.unctrl(k) == "K":
-                    return -101, ""
-            else:
-                if k == curses.KEY_LEFT:
-                    return -1, self.disconnectBatch()
-                elif curses.unctrl(k) == "^R":
-                    return +100, self.batchName
-                elif curses.unctrl(k) == "^G":
-                    return +101, self.batchName
-                elif curses.unctrl(k) == "^K":
-                    return +102, self.batchName
-
-        return 0,""
+        if self.screen.displayList:
+            if k == curses.KEY_DOWN:
+                self.screen.batchList.goDown()
+            elif k == curses.KEY_UP:
+                self.screen.batchList.goUp()
+            elif k == curses.KEY_RIGHT:
+                return DDCom(DDCom.Select,name=self.selectBatch(self.screen.batchList.currentCursor))
+            elif k == curses.KEY_DC:
+                return DDCom(DDCom.Delete, name=self.deleteBatch(self.screen.batchList.currentCursor))
+            elif curses.unctrl(k) == "K":
+                return DDCom(DDCom.Kill)
+        else:
+            if k == curses.KEY_LEFT:
+                return DDCom(DDCom.Back, name=self.disconnectBatch())
+            elif curses.unctrl(k) == "^R":
+                return DDCom(DDCom.Refresh, name=self.batchName)
+            elif curses.unctrl(k) == "^G":
+                return DDCom(DDCom.Submit, name=self.batchName)
+            elif curses.unctrl(k) == "^K":
+                return DDCom(DDCom.Switch, name=self.batchName)
     
     def deleteBatch(self, index):
         if(index>=len(self.batchList)):
