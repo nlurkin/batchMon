@@ -314,7 +314,178 @@ class MainDisplay(MyWindow):
 ##########################
 # Classes to display single job
 ##########################
+class JobDisplay(MyWindow):
+	def __init__(self, vpos, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(JobDisplay, self).__init__(0, vpos, screen)
+	
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		header = Header(self._blockPosition[1]+0, self._stdscr, "LXBATCH job monitoring")
+		header.addMenuEntry("CTRL-G", "Generate jobs")
+		header.addMenuEntry("CTRL-T", "Modify refresh rate")
+		header.addMenuEntry("CTRL-R", "Reset failed jobs")
+		header.addMenuEntry("LEFT",   "Return to batch menu")
+		header.addMenuEntry("CTRL-K", "Invert keep output")
+		header.generate()
+		self._subWindows.append(header)
+		
+		self._subWindows.append(JobHeaderWindow(4, self._stdscr))
+		self._subWindows[1].generate()
+		
+		self._subWindows.append(SummaryWindow(9, self._stdscr))
+		self._subWindows[2].generate()
+		
+		self._subWindows.append(SubmitWindow(17, self._stdscr))
+		self._subWindows[3].generate()
+		self._subWindows[3].clear()
+		
+		self._windowHandles.append(curses.newwin(1, self._stdscr.getmaxyx()[1], self._blockPosition[1]+3, self._blockPosition[0]))
+	
+	def hideSubmission(self):
+		self._subWindows[3].clear()
+		
+	def updateSummary(self, headers):
+		self._subWindows[1].updateContent(headers)
+	
+	def updateTime(self, startTime):
+		self._subWindows[1].updateTime(startTime)
+	
+	def updateStats(self, stats):
+		self._subWindows[2].updateContent(stats)
+	
+	def keyPressed(self, key):
+		if key == curses.KEY_LEFT:
+			return DCommands(DCommands.Back)
+		elif curses.unctrl(key) == "^R":
+			return DCommands(DCommands.Refresh)
+		elif curses.unctrl(key) == "^G":
+			return DCommands(DCommands.Submit)
+		elif curses.unctrl(key) == "^K":
+			return DCommands(DCommands.Switch)
+		elif curses.unctrl(key) == "^T":
+			self.setWaitingTime()
+		return MyWindow.keyPressed(self, key)
 
+	def initSubmission(self, total):
+		self._subWindows[3].initSubmission(total)
+		
+	def updateSubmission(self, jobID, jobIndex, currentID):
+		self._subWindows[3].addSubmission(jobID, jobIndex, currentID)
+		
+	def setWaitingTime(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		curses.nocbreak()
+		curses.curs_set(2)
+		curses.echo()
+		self._windowHandles[0].addstr(0, 0, "Please enter a value in seconds (0-25): ")
+		self._windowHandles[0].refresh()
+		value = self._windowHandles[0].getstr()
+		try:
+			value = int(value)
+		except ValueError:
+			pass
+		if value > 0 and value <= 25:
+			curses.halfdelay(value*10)
+		curses.curs_set(0)
+		curses.noecho()
+		self._windowHandles[0].clear()
+		
+class JobHeaderWindow(MyWindow):
+	def __init__(self, vpos, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(JobHeaderWindow, self).__init__(0, vpos, screen)
+		
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._windowHandles.append(curses.newwin(7, self._stdscr.getmaxyx()[1], self._blockPosition[1], 0))
+	
+	def updateContent(self, headers):
+		self._windowHandles[0].addstr(0,0, "Monitor {0} (saved in {0}.json) on queue {1}, keepOutput={2}".format(headers["name"], headers["queue"], headers['keep']))
+		self._windowHandles[0].addstr(1,0, "Monitoring {0} jobs from card file {1} for a maximum of {2} attempts".format(
+								headers["jobNumber"], headers["cardFile"], headers["maxAttempts"]))
+
+	def updateTime(self, startTime):
+		td = datetime.datetime.now()-datetime.datetime.fromtimestamp(startTime)
+		self._windowHandles[0].addstr(2,0, "Running since {0} ({1})	  ".format(
+							datetime.datetime.fromtimestamp(startTime).strftime('%Y-%m-%d %H:%M:%S'),
+							str(td)))
+
+class SummaryWindow(MyWindow):
+	def __init__(self, vpos, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(SummaryWindow, self).__init__(0, vpos, screen)
+	
+	def generate(self):
+		self._windowHandles.append(curses.newwin(8, self._stdscr.getmaxyx()[1], self._blockPosition[1], 0))
+
+	def updateContent(self, stats):
+		self._windowHandles[0].addstr(0,0,"Failed attempts")
+		self._windowHandles[0].addstr(0,20,"Pending jobs {0}   ".format(stats["pending"]["value"]))
+		self._windowHandles[0].addstr(0,40,"Running jobs {0}   ".format(stats["running"]["value"]))
+		self._windowHandles[0].addstr(0,60,"Failed jobs {0}   ".format(stats["failed"]["value"]))
+		self._windowHandles[0].addstr(0,80,"Finished jobs {0}   ".format(stats["finished"]))
+		self._windowHandles[0].addstr(0,100,"Unknown status {0}   ".format(stats["unknown"]))
+		
+		i=0
+		for aNumber,[pend,run,fail] in enumerate(zip(stats["pending"]["attempts"], stats["running"]["attempts"], stats["failed"]["attempts"])):
+			if aNumber==0 or i>= self._windowHandles[0].getmaxyx()[0]-1:
+				continue
+			if pend>0:
+				self._windowHandles[0].addstr(1+i,25,str(pend))
+			if run>0:
+				self._windowHandles[0].addstr(1+i,45, str(run))
+			if fail>0:
+				self._windowHandles[0].addstr(1+i,65,str(fail))
+			if pend>0 or run>0 or fail>0:
+				self._windowHandles[0].addstr(1+i,5,"{0} attempts:".format(aNumber))
+				i+=1
+		if stats["failed"]["permanent"]>0:
+			self._windowHandles[0].addstr(1+i,5,"Permanent:".format(aNumber))
+			self._windowHandles[0].addstr(1+i,65,str(stats["failed"]["permanent"]))
+
+class SubmitWindow(MyWindow):
+	_submitMaxIndex = (4,4)
+	
+	def __init__(self, vpos, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(SubmitWindow, self).__init__(0, vpos, screen)
+		
+		self._submitTotal = 0
+		self._submitCurrent = 0
+		self._submitIndex = (0,0)
+		
+	
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		
+		self._windowHandles.append(curses.newwin(8, self._stdscr.getmaxyx()[1], self._blockPosition[1], self._blockPosition[0]))
+		self._windowHandles[0].addstr(0,0, "Job submission status")
+
+	def initSubmission(self, total):
+		self._submitTotal = total
+		self.clear()
+		self.repaintFull()
+		
+	def addSubmission(self, jobID, jobIndex, currentID):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		progress = ((1.0*currentID+1)/self._submitTotal)*100
+		
+		x,y = self._submitIndex
+
+		if x>=self._submitMaxIndex[0]:
+			if y>self._submitMaxIndex[1]:
+				self._submitIndex = (0, 0)
+				self.wipeSubmitBlock()
+			else:
+				self._submitIndex = (0, y+1)
+		else:
+			self._submitIndex = (x+1,y)
+		
+		self._windowHandles[0].addstr(1, 0, "Total progress: [{2:101}] {0}/{1}".format(currentID+1,self._submitTotal, "#" * int(progress)))
+		self._windowHandles[0].addstr(2 + self._submitIndex[0],self._submitIndex[1]*20, "{0} -> {1}".format(jobIndex, jobID))
+		
+		self.repaint()
 
 class Display2:
 	'''
