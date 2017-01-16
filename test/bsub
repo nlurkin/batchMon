@@ -1,0 +1,5 @@
+#!/bin/sh
+
+RANDOM=$$
+
+echo "bsub> Job <$RANDOM> is submitted to default queue <8nm>."
