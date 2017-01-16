@@ -279,9 +279,42 @@ class ListWindow(MyWindow):
 		elif key == curses.KEY_DC:
 			return DCommands(DCommands.Delete, index=self._currentCursorPos)
 
-######
+class MainDisplay(MyWindow):
+	def __init__(self, vpos, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(MainDisplay, self).__init__(0, vpos, screen)
+	
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		header = Header(self._blockPosition[1], self._stdscr, "LXBATCH job monitoring")
+		header.addMenuEntry("K", "Kill server")
+		header.addMenuEntry("RIGHT", "Details of selected job")
+		header.addMenuEntry("UP/DOWN", "Navigate jobs")
+		header.addMenuEntry("DEL", "Remove batch")
+		header.generate()
+		self._subWindows.append(header)
 
-######
+		jobsList = ListWindow(0, self._blockPosition[1]+5, 150, 30, 150, 100, self._stdscr)
+		jobsList.generate()
+		self._subWindows.append(jobsList)
+	
+	def updateList(self, l):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._subWindows[1].clearList()
+		self._subWindows[1].updateList(l)
+		self._subWindows[1].generateList()
+	
+	def keyPressed(self, key):
+		if curses.unctrl(key) == "K":
+			return DCommands(DCommands.Kill)
+
+		return MyWindow.keyPressed(self, key)
+
+
+##########################
+# Classes to display single job
+##########################
+
 
 class Display2:
 	'''
