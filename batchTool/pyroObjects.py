@@ -176,13 +176,13 @@ class DisplayClient(object):
         self.startTime = time
     
     def updateStartTime(self):
-        self.screen.displayTime(self.startTime)
+        self.screen.updateJobTime(self.startTime)
     
     def displayJobSent(self, jobId, jobIndex, currentID):
         self.screen.displaySubmit(jobId, jobIndex, currentID)
     
     def displaySummary(self, stats):
-        self.screen.displaySummary(stats)
+        self.screen.updateJobSummary(stats)
     
     def resetSubmit(self, number):
         self.screen.resetSubmit(number)
@@ -193,26 +193,28 @@ class DisplayClient(object):
         self.screen.repaint()
         k = self.screen.getch()
         if k != -1:
-        if self.screen.displayList:
-            if k == curses.KEY_DOWN:
-                self.screen.batchList.goDown()
-            elif k == curses.KEY_UP:
-                self.screen.batchList.goUp()
-            elif k == curses.KEY_RIGHT:
-                return DDCom(DDCom.Select,name=self.selectBatch(self.screen.batchList.currentCursor))
-            elif k == curses.KEY_DC:
-                return DDCom(DDCom.Delete, name=self.deleteBatch(self.screen.batchList.currentCursor))
-            elif curses.unctrl(k) == "K":
-                return DDCom(DDCom.Kill)
+            retCmd = self.screen.keyPressed(k)
+            if retCmd is None:
+                retCmd = DCommands(DCommands.NoCMD)
+            else:
+                if retCmd.command == DCommands.Select:
+                    retCmd.name = self.selectBatch(retCmd.index)
+                elif retCmd.command == DCommands.Kill:
+                    retCmd.name = self.disconnectBatch()
+                elif retCmd.command == DCommands.Delete:
+                    retCmd.name = self.deleteBatch(retCmd.index)
+                elif retCmd.command == DCommands.Back:
+                    retCmd.name = self.disconnectBatch()
+                elif retCmd.command == DCommands.Refresh:
+                    retCmd.name = self.batchName
+                elif retCmd.command == DCommands.Submit:
+                    retCmd.name = self.batchName
+                elif retCmd.command == DCommands.Switch:
+                    retCmd.name = self.batchName
         else:
-            if k == curses.KEY_LEFT:
-                return DDCom(DDCom.Back, name=self.disconnectBatch())
-            elif curses.unctrl(k) == "^R":
-                return DDCom(DDCom.Refresh, name=self.batchName)
-            elif curses.unctrl(k) == "^G":
-                return DDCom(DDCom.Submit, name=self.batchName)
-            elif curses.unctrl(k) == "^K":
-                return DDCom(DDCom.Switch, name=self.batchName)
+            retCmd = DCommands(DCommands.NoCMD)
+            
+        return retCmd
     
     def deleteBatch(self, index):
         if(index>=len(self.batchList)):
@@ -222,19 +224,17 @@ class DisplayClient(object):
     def selectBatch(self, index):
         if(index>=len(self.batchList)):
             return None
-        self.screen.reset()
         self.batchName = self.batchList[index]
         return self.batchName
     
     def disconnectBatch(self):
-        self.screen.reset()
         batch = self.batchName
         self.batchName = ""
         return batch
     
     def displayHeader(self, headers):
         if headers!=None:
-            self.screen.displayHeader(headers)
+            self.screen.updateJobHeader(headers)
     
     def displayBatchList(self, l):
         self.batchList = l[:]

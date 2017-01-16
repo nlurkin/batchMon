@@ -83,6 +83,7 @@ def registerClient(name):
     global client, serveruri
     startTime, headers, totalJobs, summary = server.registerClient(name, serveruri)
     
+    client.screen.activateJobWindow()
     client.setStartTime(startTime)
     client.displayHeader(headers)
     client.setTotalJobs(totalJobs)
