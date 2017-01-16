@@ -5,20 +5,103 @@ Created on 16 May 2014
 '''
 import curses
 import datetime
+import sys
 
+first = True
+def log(*text):
+	global first
+#	return
+	mode = "a"
+	if first:
+		mode = "w"
+		first = False
+	with open("xxx",mode) as fd:
+		fd.write("{}\n".format(str(text)))
+
+class MyWindow(object):
+	'''
+	Base class for curses windows.
+	''' 
+	def __init__(self, px, py, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._stdscr = screen
+		self._blockPosition = (px,py)
+		self._windowHandles = []
+		self._subWindows = []
+		
+	def repaint(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		for handle in self._windowHandles:
+			handle.noutrefresh()
+		for handle in self._subWindows:
+			handle.repaint()
+	
+	def keyPressed(self, key):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		for handle in self._subWindows:
+			ret = handle.keyPressed(key)
+			if not ret is None:
+				return ret
+		return None
+	
+	def repaintFull(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		for handle in self._windowHandles:
+			handle.redrawwin()
+		for handle in self._subWindows:
+			handle.repaintFull()
+	
+	def clear(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		for handle in self._windowHandles:
+			handle.clear()
+		for handle in self._subWindows:
+			handle.clear()
+		
+	
+class Header(MyWindow):
+	'''
+	Generic header window containing a title and a menu
+	'''
+	def __init__(self, vpos, screen, title):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(Header, self).__init__(0, vpos, screen)
+		self._title = title
+		self._menuList = []
+	
+	def addMenuEntry(self, key, text):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._menuList.append((key,text))
+
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		handle = curses.newwin(8, self._stdscr.getmaxyx()[1], self._blockPosition[0], self._blockPosition[1])
+		
+		handle.addstr(0,50, self._title)
+		handle.move(0,0)
+		handle.chgat(curses.color_pair(1))
+		handle.move(1,0)
+		for key,text in self._menuList:
+			handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+			handle.addstr(" {}: {} ".format(key,text) ,curses.color_pair(1))
+		handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
+		handle.chgat(curses.color_pair(1))
+		
+		self._windowHandles.append(handle)
+		
 class DCommands(object):
-    NoCMD      = 0
-    Select     = +1
-    Back       = -1
-    Delete     = -100
-    Kill       = -101
-    Refresh    = +100
-    Submit     = +101
-    Switch     = +102
-    
-    def __init__(self, Command, **kwargs):
-        self.command = Command
-        self.__dict__.update(kwargs)
+	NoCMD      = 0
+	Select     = +1
+	Back       = -1
+	Delete     = -100
+	Kill       = -101
+	Refresh    = +100
+	Submit     = +101
+	Switch     = +102
+	
+	def __init__(self, Command, **kwargs):
+		self.command = Command
+		self.__dict__.update(kwargs)
 
 class Display2:
 	'''
