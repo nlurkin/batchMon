@@ -103,6 +103,186 @@ class DCommands(object):
 		self.command = Command
 		self.__dict__.update(kwargs)
 
+###########################
+# Classes for main display
+#  - Main display as main container. Contains a header and a ListWindow
+#  - ListWindow to display the job list
+#
+#  -------------------------------------------------------------------
+#  |                            Header                               |
+#  |-----------------------------------------------------------------|
+#  |       ListWindow             |                                  |
+#  -------------------------------------------------------------------
+###########################
+class ListWindow(MyWindow):
+	
+	class fieldsSize:
+		nameField = 50
+		sizeField = 20
+		timeField = 20
+
+	def __init__(self, px, py, dwidth, dheight, pwidth, pheight, screen):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		super(ListWindow, self).__init__(px, py, screen)
+		
+		# Window and pad sizes
+		self._displayWidth = dwidth
+		self._displayHeight = dheight
+		self._padWidth = pwidth
+		self._padHeight = pheight
+		
+		# Currently displayed
+		self._currentWindowPos = 0
+		self._currentCursorPos = 0
+		
+		# Elements
+		self._listElements = []
+		self._selectedElements = []
+	
+	def generate(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		
+		self._windowHandles.append(curses.newpad(self._padHeight, self._padWidth))
+	
+	def repaint(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._windowHandles[0].nooutrefresh(self._currentWindowPos, 0, self._blockPosition[1], self._blockPosition[0], self._blockPosition[1]+self._displayHeight, self._blockPosition[0]+self._displayWidth)
+	
+	def addElement(self, name):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._listElements.append(name)
+		
+	def updateList(self, bList):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		
+		self.selected = []
+		
+		for f in bList:
+			self.addElement(f)
+
+	def clearList(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		del self._listElements[:]
+			
+	def generateList(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		i = 0
+		self._windowHandles[0].clear()
+		for el in self._listElements:
+			self._windowHandles[0].addstr(i, 2, "[ ] ")
+			self._windowHandles[0].addnstr(el, ListWindow.fieldsSize.nameField)
+			i = i + 1
+		
+		self.goTop()
+	
+	def goReset(self):
+		''' Reset the display of the cursors '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		for i in range(0,len(self._listElements)):
+			self.setStateChar(i, False)
+	
+	def goCheck(self, index):
+		''' Verify that given index is valid, than call the scrolling check '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if len(self._listElements) == 0:
+			return False
+		if index < 0:
+			return False
+		if index >= len(self._listElements):
+			return False
+		self.goCheckScrolling(index)
+		return True
+
+	def goCheckScrolling(self, cursor):
+		''' Verify if pad needs scrolling '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if cursor > (self._currentWindowPos + self._displayHeight):
+			self._currentWindowPos += 1
+		elif cursor < self._currentWindowPos:
+			self._currentWindowPos -= 1
+
+	def goTop(self):
+		''' Go at the first element '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self.goReset()
+		self._currentWindowPos = 0
+		if not self.goCheck(0):
+			return
+		self._currentCursorPos = 0
+		self.setStateChar(self._currentCursorPos, True)
+	
+	def goDown(self):
+		''' Go down one element '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if not self.goCheck(self._currentCursorPos+1):
+			return
+		self.goReset()
+		self._currentCursorPos += 1
+		self.setStateChar(self._currentCursorPos, True)
+		
+	def goUp(self):
+		''' Go up one element '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if not self.goCheck(self._currentCursorPos-1):
+			return
+		self.goReset()
+		self._currentCursorPos -= 1
+		self.setStateChar(self._currentCursorPos, True)
+	
+	def select(self):
+		''' Select the current element '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if self._currentCursorPos in self._selectedElements:
+			self._selectedElements.remove(self._currentCursorPos)
+			self.setStateChar(self._currentCursorPos, True)
+		else:
+			self._selectedElements.append(self._currentCursorPos)
+			self.setStateChar(self._currentCursorPos, False)
+	
+	def unselectAll(self):
+		''' Deselect all elements '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		cp = self._selectedElements
+		self._selectedElements = []
+		for i in cp:
+			self.setStateChar(i, i==self._currentCursorPos)
+
+	def hideCursor(self):
+		''' Hide the cursor '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self.setStateChar(self._currentCursorPos, False)
+
+	def showCursor(self):
+		''' Show the cursor '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self.setStateChar(self._currentCursorPos, True)
+
+	def setStateChar(self, index, coming):
+		''' Set the display of the cursor '''
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if coming:
+			self._windowHandles[0].addstr(index, 3, "*")
+		else:
+			if index in self.selected:
+				self._windowHandles[0].addstr(index, 3, "x")
+			else:
+				self._windowHandles[0].addstr(index, 3, " ")
+		
+	def keyPressed(self, key):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		if key == curses.KEY_DOWN:
+			self.goDown()
+		elif key == curses.KEY_UP:
+			self.goUp()
+		elif key == curses.KEY_RIGHT:
+			return DCommands(DCommands.Select,index=self._currentCursorPos)
+		elif key == curses.KEY_DC:
+			return DCommands(DCommands.Delete, index=self._currentCursorPos)
+
+######
+
+######
+
 class Display2:
 	'''
 	Class for displaying things on screen
