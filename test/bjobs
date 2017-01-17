@@ -1,0 +1,14 @@
+list=`cat jobs.list`
+
+	echo "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME"
+for el in $list; do
+	echo "$el     nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40"
+done
+
+#JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
+#834900844 nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40
+
+
+#JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
+#834900844 nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40
+#834830633 nlurkin EXIT  8nm        lxplus007.c p06108707c4 ./xxx      Jan 16 16:30

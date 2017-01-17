@@ -2,4 +2,6 @@
 
 RANDOM=$$
 
-echo "bsub> Job <$RANDOM> is submitted to default queue <8nm>."
+num=$RANDOM
+echo "bsub> Job <$num> is submitted to default queue <8nm>."
+echo $num >> jobs.list
