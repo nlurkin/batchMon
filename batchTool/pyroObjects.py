@@ -79,8 +79,9 @@ class JobServer:
     def getBatchList(self):
         printDebug(3, "Sending batch list")
         l = []
-        for name,obj in self.listBatch.iteritems():
-            l.append({'name':name, 'stats':obj["monitor"].config.getStatusStats()})
+        orderedNames = order(self.listBatch.keys())
+        for name in orderedNames:
+            l.append({'name':name, 'stats':self.listBatch[name]["monitor"].config.getStatusStats()})
         return l
     
     def submitInit(self, name):
