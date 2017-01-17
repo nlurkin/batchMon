@@ -3,12 +3,15 @@ listFile = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/testList.list
 outputDir = /afs/cern.ch/user/n/nlurkin/git/batchMon/test/outputTest
 maxJobs = 5
 outputFile = job_test$jobIndex.root
-maxAttempts=1
+maxAttempts=2
+jobsGrouping=2
 
-optTemplate = $outputFile
+optTemplate = $outputFile $jobIndex $fileName
 
-preExecute = source ~/env.sh
+preExecute = source ~/env32.sh
+	echo "$fileList"
+	echo $fileNameArr[1]
 
 postExecute = ls
 	pwd
-	mv $outputFile $outputDir/$outputFile
+	echo "mv $outputFile $outputDir/$outputFile"

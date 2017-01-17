@@ -3,12 +3,15 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
-import SimpleConfigParser
 import json
 import os
 import shutil
+import sys
 import time
+
 import FSSelector
+import SimpleConfigParser
+
 
 class BatchToolExceptions:
 	'''
@@ -39,9 +42,9 @@ class BatchJob:
 	Class representing a single job
 	'''
 	
-	def __init__(self, data, inputFile, index, seq):
+	def __init__(self, data, index, seq):
 		if data==None:
-			self.inputFile = inputFile
+			self.inputFile = []
 			self.index = index
 			self.queue = None
 			self.jobID = None
@@ -51,6 +54,9 @@ class BatchJob:
 			self.jobSeq = seq
 		else:
 			self.__dict__ = data
+	
+	def addInputFile(self, fileName):
+		self.inputFile.append(fileName)
 	
 	def update(self, dico):
 		'''
@@ -150,9 +156,13 @@ fileList:
 		self.finalizeStage = -1
 		
 		self.jobsList = []
+		
+		self.jobsGroup = 1
+		
+		self.inputFilesList = []
 
 	
-	def initCardFile(self, cardFile, name, queue, test=False):
+	def initCardFile(self, cardFile, name, queue, test=False, arrayed=False):
 		'''
 		Set the card file for the batch. Read it and generate the jobs.
 		'''
@@ -170,28 +180,26 @@ fileList:
 			self._checkOutputDir()
 			
 		self._readInputList(test)
-		self._generateScript()
+		if arrayed:
+			self._generateScriptArrayed()
+		else:
+			self._generateScript()
 	
 	def load(self, jsonFile):
 		'''
 		Load a json file for an existing batch
-		FIXME: Not working anymore in server
 		'''
 		with open(jsonFile) as f:
 			[self.__dict__,jobsList] = json.load(f)
-			#xxx = finalBatchJob("")
-			#xxx.__dict__ = self.finalJob
-			#self.finalJob = xxx
 			self.jobsList = []
 			for job in jobsList:
 				jsonstring = job.replace("'", '"').replace("None", 'null')
-				j = BatchJob(json.loads(jsonstring), None, None, None)
+				j = BatchJob(json.loads(jsonstring), None, None)
 				self.jobsList.append(j)
 	
 	def save(self, fileName):
 		'''
 		Save batch in json
-		FIXME: Not working anymore in server
 		'''
 		with open(fileName, "wb") as f:
 			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
@@ -202,9 +210,40 @@ fileList:
 		'''
 		dico = dict(self._templateDico)
 		dico["jobIndex"] = index
-		dico["fileName"] = fileName
+		if fileName:
+			fileList = ""
+			for i,f in enumerate(fileName):
+				dico["fileNameArr[%s]" % i] = f
+				fileList = fileList + ("%s\n" % (f)) 
+			dico["fileList"] = fileList.rstrip("\n")
+			dico["fileName"] = fileName[0]
+		else:
+			dico["fileList"] = ""
+			dico["fileName"] = None
 		dico["outputDir"] = self.outputDir
 		dico["outputFile"] = self.outputFile
+		
+		return dico
+	
+	def _buildSearchMapArrayed(self, step, fileName):
+		'''
+		Build map to replace all $-parameters
+		'''
+		dico = dict(self._templateDico)
+		dico["jobIndex"] = "$((${LSB_JOBINDEX}-1))"
+		if fileName:
+			fileList = ""
+			for i,f in enumerate(fileName):
+				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}" % (i+1, step)
+				fileList = fileList + ("${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}\n" % (i+1, step))
+			dico["fileList"] = fileList.rstrip("\n")
+			dico["fileName"] = "$fileNameArr[0]"
+		else:
+			dico["fileList"] = ""
+			dico["fileName"] = None
+		dico["outputDir"] = self.outputDir
+		dico["outputFile"] = self.outputFile
+		
 		return dico
 	
 	def _testOutputFile(self, index):
@@ -214,6 +253,7 @@ fileList:
 		
 		#Output file is the outputDir + replaced template file name
 		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
+		#print path
 		if FSSelector.exists(path):
 			return False
 		return True
@@ -227,22 +267,52 @@ fileList:
 		
 	def _readInputList(self, test):
 		'''
-		Read the input list file and create one job / entry (1 line = 1 entry)
+		Read the input list file and create one job for jobsGroup entry (1 line = 1 entry)
 		'''
 		with open(self.listFile,'r') as f:
 			j = 0
-			for i,line in enumerate(f):
-				#If start index specified, skip the first startIndex files
+			group = 0
+			i = 0
+			job = None
+			skip = False
+			for line in f:
+				self.inputFilesList.append(line.strip('\n'))
+				#If start index specified, skip the first startIndex groups
 				if i>=self.startIndex:
 					#Always create the job if we don't test
 					#Else create only if output file does not exist
-					if (not test) or self._testOutputFile(i):
-						self.jobsList.append(BatchJob(None, line.strip('\n'), i, j))
-						j += 1
+					#print "Test %s exists=%s" % (i,self._testOutputFile(i))
+					if (not test) or (group>0 or self._testOutputFile(i)):
+						if skip:
+							group += 1
+							if group==self.jobsGroup:
+								skip = False
+								group = 0
+								i += 1
+							continue
+						if group==0:
+							job = BatchJob(None, i, j)
+						job.addInputFile(line.strip('\n'))
+						group += 1
+						#print self.jobsGroup
+						if group==self.jobsGroup:
+							self.jobsList.append(job)
+							group = 0
+							j += 1
+							i += 1
+							job = None
+					else:
+						skip = True
+						group += 1
+						if group==self.jobsGroup:
+							skip = False
+							group = 0
+							i += 1
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
-		
+			if group>0 and job!=None:
+				self.jobsList.append(job)
 		self.jobNumber = len(self.jobsList)
 		
 	def _readCardFile(self):
@@ -290,6 +360,9 @@ fileList:
 		
 		if cp.hasoption("finalScript"):
 			self.finalJob = finalBatchJob(cp.getoption("finalScript"))
+		
+		if cp.hasoption("jobsGrouping"):
+			self.jobsGroup = int(cp.getoption("jobsGrouping"))
 
 
 	def _readAndReplace(self, string, searchMap):
@@ -327,10 +400,45 @@ fileList:
 			post = self._readAndReplace(self.postExecute, dico)
 			#Set the script
 			self.jobsList[i].script = sReturn % (pre, command, post)
+			
 		#Create the final job script if exists
 		if len(indexList)>0 and self.finalJob:
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
 	
+	def _generateBashArray(self):
+		listString = "fileName[0]=aligning\n"
+		for i,f in enumerate(self.inputFilesList):
+			listString = listString + "fileName[%i]=%s\n" % (i+1, f)
+		
+		return listString
+		
+		
+	def _generateScriptArrayed(self):
+		'''
+		Generate scripts for all jobs
+		'''
+		
+		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
+		sFileList = self._generateBashArray()
+		indexList = range(0,self.jobNumber)
+		
+		if len(indexList)>0:
+			#Generate the $-parameter dictionary
+			dico = self._buildSearchMapArrayed(len(self.jobsList[0].inputFile), self.jobsList[0].inputFile)
+			#Apply the dictionary for the 3 parts of the script
+			pre = self._readAndReplace(self.preExecute, dico)
+			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
+			post = self._readAndReplace(self.postExecute, dico)
+			#Set the script
+			self.jobsList[0].script = sReturn % (sFileList, pre, command, post)
+		for i in indexList:
+			self.jobsList[i].script = self.jobsList[0].script
+			
+		#Create the final job script if exists
+		if len(indexList)>0 and self.finalJob:
+			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
+			
+			
 	def __str__(self):
 		'''
 		String representation
@@ -348,7 +456,7 @@ fileList:
 		#job["attempts"] = -2
 		return True
 	
-	def updateJob(self, jobID, dico, keep):
+	def updateJob(self, jobID, dico, keep, jobArraySeq=None):
 		'''
 		Update job with the information in the dico
 		'''
@@ -358,11 +466,17 @@ fileList:
 		#Does this job exist
 		if jobID in self.jobCorrespondance:
 			#Get the job index and the job itself
-			jobSeq = self.jobCorrespondance[jobID]
+			if jobArraySeq==None:
+				jobSeq = self.jobCorrespondance[jobID]
+			else:
+				jobSeq = jobArraySeq-1
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
+			if jobArraySeq==None:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
+			else:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + str(jobArraySeq)
 			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output

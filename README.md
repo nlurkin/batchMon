@@ -31,7 +31,7 @@ client retrieve the information.
 
 batchMon.py Usage
 --------------
-batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k]
+batchMon.py [-h] [-q QUEUE] [-t] [-n NAME] [-x] [-k] [--limit N]
 				[(-c CONFIG | -l LOAD)] [-s]
 
 optional arguments:
@@ -40,6 +40,9 @@ optional arguments:
 	-t, --test			When restarting a series of job, for each job 
 							test if the output file already exists. If yes, 
 							skip the job (do not regenerate existing output files)
+	--limit	N			Limit on concurrently active (RUN or PEND) jobs 
+							(default=-1: no limit). This is not a strict limit as
+							there is a delay between submitting and monitoring.
 	-n NAME, --name 	Name of the batch
 	-k, --keep			Do not delete the LXBATCH output (LSFJOB_xxxxxxx)
 	-c CONFIG, --config Configuration file to use (new batch)
@@ -66,31 +69,38 @@ Several fields are mandatory:
 	o executable : path to the main executable to run
 
 Others are not:
-	o optTemplate :	line to use as argument for the
-						executable 	(templated)
-	o preExecute :	bash script to execute before starting 
-						the executable (templated)
-	o postExecute :	bash script to execute after the 
-						executable finished it's execution 
+	o optTemplate :	line to use as argument for the executable (templated)
+	o preExecute :	bash script to execute before starting the executable
 						(templated)
-	o startIndex :	starting index in the input list file
-	o maxJobs : 	maximum number of files to read fron the
-						input list file
+	o postExecute :	bash script to execute after the executable finished
+						it's execution (templated)
+	o startIndex :	starting index in the input list file 
+	o maxJobs : 	maximum number of files to read fron the input list
+						file
 	o maxAttempts :	maximum attempts before giving up on a job
-	o outputDir : 	path to a directory where the monitor 
-						can find the output files
+	o outputDir : 	path to a directory where the monitor can find the
+						output files
 	o outputFile :	name of the ouput file (templated)
 	o requirement :	specify requirement for bsub (-R flag)
-	o finalScript :	script executed when all jobs are
-						successfully finished (can be used
-						to create a new batch)
+	o finalScript :	script executed when all jobs are successfully finished
+						(can be used to create a new batch)
+	o jobsGrouping: number of input files to group in a single job. 
+						Example: with 202 input files and jobsGrouping = 100,
+						3 jobs will be created. The first job run over the
+						100 first files, the second over the 100 next and
+						the third over the last 2 files.
 
-The fields marked as "templated" can use of the following 
-placeholder that will be replaced when submitting the job:
-	o $jobIndex : 	will be replaced by the index of the job
-						(=file index in the list of files)
-	o $fileName :  will be replaced by the input file name
-	o $outputDir : will be replaced by the output directory
-						as defined by the outputDir field
-	o $outputFile :will be replaced by the filename as defined
-						by the outputFile field
+The fields marked as "templated" can use of the following placeholder that
+will be replaced when submitting the job:
+	o $jobIndex : 		will be replaced by the index of the job (=file index
+							in the list of files) -- not working with arrayed submitting
+	o $fileNameArr[n] :	will be replaced by the file name of the nth file in
+							the list of input files of the job	-- not working with arrayed submitting
+	o $fileName :  		will be replaced by the file name of the first input 
+							file of the job
+	o $fileList :		will be replaced by a list of the input files name
+							of the job separated by \n
+	o $outputDir : 		will be replaced by the output directory as defined by
+							the outputDir field
+	o $outputFile :		will be replaced by the filename as defined by the
+							outputFile field

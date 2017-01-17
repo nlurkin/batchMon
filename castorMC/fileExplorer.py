@@ -173,13 +173,19 @@ class CastorConnector(object):
 			if l[8].startswith("."):
 				continue
 			if l[0][0]=="d":
-				dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
-				dt.replace(year=2014)
+				if ":" in l[7]:
+					dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
+					dt.replace(year=2014)
+				else:
+					dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %Y")
 				t = time.mktime(dt.timetuple())
 				dirList.append({"name":l[8], "type":"d", "mtime":t})
 			else:
-				dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
-				dt.replace(year=2014)
+				if ":" in l[7]:
+					dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %H:%M")
+					dt.replace(year=2014)
+				else:
+					dt = datetime.datetime.strptime(("%s %s %s")%(l[5], l[6],l[7]), "%b %d %Y")
 				t = time.mktime(dt.timetuple())
 				fileList.append({"name":l[8], "type":"f", "size":int(l[4]), "mtime":t})
 		

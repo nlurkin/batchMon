@@ -182,8 +182,10 @@ class ListWindow(MyWindow):
 		self._windowHandles[0].clear()
 		for el in self._listElements:
 			self._windowHandles[0].addstr(i, 2, "[ ] ")
-			self._windowHandles[0].addnstr(el, ListWindow.fieldsSize.nameField)
+			self._windowHandles[0].addnstr(el["name"], self.fieldsSize.nameField)
+			self._windowHandles[0].addstr(i, self.fieldsSize.nameField, "{pending[value]} {running[value]} {failed[value]} {finished}".format(**el["stats"]))
 			i = i + 1
+
 		
 		self.goTop()
 	
@@ -240,7 +242,14 @@ class ListWindow(MyWindow):
 		self.goReset()
 		self._currentCursorPos -= 1
 		self.setStateChar(self._currentCursorPos, True)
-	
+
+	def goTo(self, index):
+		if not self.goCheck(index):
+			return
+		self.goReset()
+		self._currentCursor = index
+		self.setStateChar(self._currentCursor, True)
+
 	def select(self):
 		''' Select the current element '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
@@ -649,4 +658,4 @@ class Display2:
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		if self.stdscr==None:
 			return
-		
+

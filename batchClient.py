@@ -14,6 +14,7 @@ __version__ = '3.0'
 try:
     from argparse import ArgumentParser, RawDescriptionHelpFormatter
 except ImportError:
+    #Compatibility with older version of python that does not have argpase built-in
     from batchTool.argparse import ArgumentParser, RawDescriptionHelpFormatter
 
 import curses
@@ -37,7 +38,6 @@ def mainLoop():
             pyroSockets = set(pyroDaemon.sockets)
             rs = []  # only the broadcast server is directly usable as a select() object
             rs.extend(pyroSockets)
-            #rs.extend()
             rs, _, _ = select.select(rs, [], [], 0.1)
             eventsForDaemon = []
             
@@ -51,29 +51,40 @@ def mainLoop():
             retCmd = client.mainLoop()
             
             if retCmd.command==DCommands.Back:
+                #Disconnect from a batch
                 server.disconnectClient(retCmd.name, serveruri)
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif retCmd.command== DCommands.Select and retCmd.name!=None:
+                #Connect to a batch
                 registerClient(retCmd.name)
+            elif retCmd.command== DCommands.Refresh:
+                #Refresh batch list
+                l = server.getBatchList()
+                client.displayBatchList(l)
             elif retCmd.command==DCommands.Delete and retCmd.name!=None:
+                #Remove a batch
                 server.removeBatch(retCmd.name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
             elif retCmd.command==DCommands.Kill:
+                #Kill the server
                 server.disconnectClient(retCmd.name, serveruri)
                 server.stop()
                 break
             elif retCmd.command==DCommands.Refresh:
+                #Reset failed jobs
                 server.resubmitFailed(retCmd.name)
             elif retCmd.command==DCommands.Submit:
+                #Initial submit
                 server.submitInit(retCmd.name)
             elif retCmd.command==DCommands.Switch:
+                #Invert keep output
                 header = server.invertKeepOutput(retCmd.name)
                 client.displayHeader(header)
-            
-
+        
         except KeyboardInterrupt:
+            #Quit the client
             break
             
     server.disconnectClient(client.getName(), serveruri)
@@ -81,9 +92,11 @@ def mainLoop():
 
 def registerClient(name):
     global client, serveruri
+    #Register the client and get basic info from server in return
     startTime, headers, totalJobs, summary = server.registerClient(name, serveruri)
     
-    client.screen.activateJobWindow()
+    #client.screen.activateJobWindow()
+    #Display them
     client.setStartTime(startTime)
     client.displayHeader(headers)
     client.setTotalJobs(totalJobs)
@@ -100,11 +113,6 @@ def mainInit(scr=None):
     l = server.getBatchList()
     client.displayBatchList(l)
     
-    #startTime, headers = server.registerClient("xxx", serveruri)
-    
-    #client.setStartTime(startTime)
-    #client.displayHeader(headers)
-    
     mainLoop()
 
 def argParser():
@@ -115,10 +123,14 @@ def argParser():
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('-q', '--queue', action='store', default="1nh", 
                     help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
+    parser.add_argument('--limit', action='store', default="-1", 
+                    help="Limit on concurrently active (RUN or PEND) jobs (default=-1: no limit).This is not a strict limit as there is a delay between submitting and monitoring.")
     parser.add_argument('-t', '--test', action='store_true', default=False,
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
+    parser.add_argument('-a', '--arrayed', action='store_true', default=False, 
+                    help="Generate jobs array")
     #parser.add_argument('-x', '--nocurse', action='store_true', 
     #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
@@ -131,30 +143,46 @@ def argParser():
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
-
+   
+    serverFound = False
     with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
-        ip = f.readline()
-    print ip
-    nameserver = Pyro4.naming.locateNS(host=ip)
+        for ip in f:
+            print "Trying {0}".format(ip.rstrip())
+            try:
+                nameserver = Pyro4.naming.locateNS(host=ip.rstrip())
+            except Pyro4.errors.PyroError as p:
+                print "Server not found at {0}".format(ip.rstrip())
+            else:
+                serverFound = True
+            if serverFound:
+                break
+
+    if not serverFound:
+        print "No server found... Aborting"
+        sys.exit(0)
     uri = nameserver.lookup("castor.jobServer")
     server = Pyro4.Proxy(uri)
     
+    #Always check if path is absolute or not. Server is waiting for absolute path (or relative to server).
+    #Add new batch
     if args.config:
         try:
             if not os.path.isabs(args.config):
                 args.config = os.getcwd()+"/"+args.config
-            server.addBatch(args.config, args.name, args.queue, args.test, args.keep)
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit, args.arrayed)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()
+    #Load new batch
     elif args.load:
         try:
             if not os.path.isabs(args.load):
                 args.load = os.getcwd()+"/"+args.load
-            server.loadBatch(args.load, args.name, args.keep)
+            server.loadBatch(args.load, args.name, args.keep, args.limit)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())        
             raise Exception()
+    #Do the initial submit if requested
     if args.submit:
         server.submitInit(args.name)
         return 
