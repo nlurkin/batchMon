@@ -103,6 +103,11 @@ class DCommands(object):
 		self.command = Command
 		self.__dict__.update(kwargs)
 
+class DObject(object):
+	
+	def __init__(self, **kwargs):
+		self.__dict__.update(kwargs)
+		
 ###########################
 # Classes for main display
 #  - Main display as main container. Contains a header and a ListWindow
