@@ -240,6 +240,7 @@ class DisplayClient(object):
     
     def displayBatchList(self, l):
         self.batchList = l[:]
+        self.screen.activateMainWindow()
         self.screen.updateContent(DObject(batchList=l))
     
     def getName(self):
