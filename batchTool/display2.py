@@ -7,10 +7,12 @@ import curses
 import datetime
 import sys
 
+doLog = False
 first = True
 def log(*text):
-	global first
-#	return
+	global first, doLog
+	if not doLog:
+		return
 	mode = "a"
 	if first:
 		mode = "w"
@@ -309,6 +311,7 @@ class MainDisplay(MyWindow):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		header = Header(self._blockPosition[1], self._stdscr, "LXBATCH job monitoring")
 		header.addMenuEntry("K", "Kill server")
+		header.addMenuEntry("r", "Refresh list")
 		header.addMenuEntry("RIGHT", "Details of selected job")
 		header.addMenuEntry("UP/DOWN", "Navigate jobs")
 		header.addMenuEntry("DEL", "Remove batch")
@@ -321,17 +324,20 @@ class MainDisplay(MyWindow):
 	
 	def doUpdate(self, dataObject):
 		if hasattr(dataObject, "batchList"):
-			self._updateList(dataObject.batchList)
+			self._updateList(dataObject.batchList, dataObject.lastIndex)
 	
-	def _updateList(self, l):
+	def _updateList(self, l, index):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self._subWindows[1].clearList()
 		self._subWindows[1].updateList(l)
 		self._subWindows[1].generateList()
+		self._subWindows[1].goTo(index)
 	
 	def keyPressed(self, key):
 		if curses.unctrl(key) == "K":
 			return DCommands(DCommands.Kill)
+		elif curses.unctrl(key) == "r":
+			return DCommands(DCommands.Refresh)
 
 		return MyWindow.keyPressed(self, key)
 
