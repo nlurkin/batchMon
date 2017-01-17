@@ -533,7 +533,6 @@ class Display2:
 		'''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self.stdscr = None
-		self.displayList = False
 		
 		self.mainWindow = None
 		self.jobWindow = None
@@ -583,13 +582,15 @@ class Display2:
 			
 			self.mainWindow.generate()
 			self.jobWindow.generate()
+			self.stdscr.refresh()
+			self.activateMainWindow()
 	
 	def repaint(self):
 		'''
 		Repaint the screen.
 		'''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		if self.stdscr==None:
+		if self.stdscr==None or self.active==None:
 			return
 		
 		self.active.repaint()
@@ -616,42 +617,8 @@ class Display2:
 		self.repaint()
 	
 	
-	def updateJobHeader(self, headers):
-		'''
-		Update the job header information
-		'''
-		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		if self.stdscr == None:
-			return
-		
-		self.jobWindow._updateSummary(headers)
-		
-	def updateJobTime(self, startTime):
-		'''
-		Update job time information
-		'''
-		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		if self.stdscr == None:
-			return
-		self.jobWindow._updateTime(startTime)
-
-	def updateJobSummary(self, stats):
-		'''
-		Update the summary information about the job
-		'''
-		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		if self.stdscr == None:
-			return
-		
-		self.active = self.jobWindow
-		self.active._updateStats(stats)
-	
-	def displaySubmit(self, jobID, jobIndex, currentID):
-		'''
-		Display a new job submission
-		'''
-		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		self.jobWindow._updateSubmission(jobID, jobIndex, currentID)
+	def updateContent(self, dataObject):
+		self.active.updateContent(dataObject)
 	
 	def resetSubmit(self, total):
 		'''
@@ -660,26 +627,17 @@ class Display2:
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self.jobWindow.initSubmission(total)
 	
-	def displayBatchList(self, l):
-		'''
-		Display the list of batch jobs
-		'''
-		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		self.stdscr.refresh()
-		self.activateMainWindow()
-		self.mainWindow._updateList(l)
-	
 	def keyPressed(self, k):
 		'''
 		Propagate pressed key to the active window 
 		'''
 		return self.active.keyPressed(k)
 		
-	def setError(self, strerr):
+	def _setError(self, strerr):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self.erroWindow.addstr(0, 0, strerr)
 
-	def displayFinalJob(self, job):
+	def _displayFinalJob(self, job):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		if self.stdscr==None:
 			return
@@ -687,7 +645,7 @@ class Display2:
 		self.finalWindow.addstr(1, 0, "JobID: %s" % job.jobID)
 		self.finalWindow.addstr(1, 30, "Status: %s" % job.status)
 	
-	def displayFinalResult(self, job):
+	def _displayFinalResult(self, job):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		if self.stdscr==None:
 			return

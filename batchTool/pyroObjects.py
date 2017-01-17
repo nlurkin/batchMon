@@ -11,7 +11,7 @@ import Pyro4
 
 from . import Monitor2, Display2
 from util import printDebug
-from batchTool.display2 import DCommands
+from batchTool.display2 import DCommands, DObject
 
 stopAll = False
 class JobServer:
@@ -171,18 +171,20 @@ class DisplayClient(object):
         self.screen.setScreen(scr)
         self.batchList = []
         self.batchName = ""
+        
+        self.screen.activateMainWindow()
     
     def setStartTime(self, time):
         self.startTime = time
     
     def updateStartTime(self):
-        self.screen.updateJobTime(self.startTime)
+        self.screen.updateContent(DObject(startTime=self.startTime))
     
     def displayJobSent(self, jobId, jobIndex, currentID):
-        self.screen.displaySubmit(jobId, jobIndex, currentID)
+        self.screen.updateContent(DObject(jobSubmit=True, jobID=jobId, jobIndex=jobIndex, currentID=currentID))
     
     def displaySummary(self, stats):
-        self.screen.updateJobSummary(stats)
+        self.screen.updateContent(DObject(jobStats=stats))
     
     def resetSubmit(self, number):
         self.screen.resetSubmit(number)
@@ -234,11 +236,11 @@ class DisplayClient(object):
     
     def displayHeader(self, headers):
         if headers!=None:
-            self.screen.updateJobHeader(headers)
+            self.screen.updateContent(DObject(jobHeader=headers))
     
     def displayBatchList(self, l):
         self.batchList = l[:]
-        self.screen.displayBatchList(l)
+        self.screen.updateContent(DObject(batchList=l))
     
     def getName(self):
         return self.batchName
