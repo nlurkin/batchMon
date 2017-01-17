@@ -4,7 +4,6 @@ Created on Sep 30, 2014
 @author: ncl
 '''
 
-import curses
 import threading
 
 import Pyro4
@@ -320,6 +319,3 @@ class DisplayClient(object):
             retCmd = DCommands(DCommands.NoCMD)
             
         return retCmd
-                #elif curses.unctrl(k) == "r":
-                    #Refresh the list of jobs
-                    #return +5, ""
