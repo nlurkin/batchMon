@@ -92,6 +92,7 @@ class finalBatchJob:
 		self.status = None
 		self.queue = None
 		self.output = None
+		self.jobIndex = None
 	
 	def update(self, dico):
 		'''
@@ -106,6 +107,8 @@ class finalBatchJob:
 			self.status = dico["status"]
 		if "script" in dico:
 			self.script = dico["script"]
+		if "index" in dico:
+			self.jobIndex = dico["index"]
 	
 class ConfigBatch:
 	_templateDico = {"jobIndex":0, "fileName":"", "outputDir":"", "outputFile":""}

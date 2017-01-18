@@ -11,6 +11,7 @@ import Pyro4
 from . import Monitor2, Display2
 from util import printDebug
 from batchTool.display2 import DCommands, DObject
+from batchTool.lsfMonitor import getLSFMonitorInstance
 
 stopAll = False
 class JobServer:
@@ -79,7 +80,7 @@ class JobServer:
     def getBatchList(self):
         printDebug(3, "Sending batch list")
         l = []
-        orderedNames = order(self.listBatch.keys())
+        orderedNames = sorted(self.listBatch.keys())
         for name in orderedNames:
             l.append({'name':name, 'stats':self.listBatch[name]["monitor"].config.getStatusStats()})
         return l
@@ -122,6 +123,7 @@ class JobServer:
             self.mutex.release()
         
     def mainLoop(self):
+        getLSFMonitorInstance().refreshInfo()
         for name,batch in self.listBatch.items():
             
             #Start monitor function for each batch in its own thread because can be very slow and block the server
@@ -167,14 +169,14 @@ class JobServer:
                         printDebug(3, "["+cThread.name+"] Generate job " + str(i))
                         jList.append(job)
             
-            lsfID = batch["monitor"].submitArrayed(jList)
+            lsfID,index = batch["monitor"].submit(jList)
             printDebug(3, "["+cThread.name+"] acquire mutex")
                         
             #Notify the clients that the job was submitted
             if self.mutex.acquire():
                 try:
                     for clients in batch["clients"]:
-                        clients.displayJobSent(lsfID, -1, len(jList)-1)
+                        clients.displayJobSent(lsfID, index, len(jList)-1)
                 except Exception:
                     printDebug(1, "["+cThread.name+"] Exception:")
                     printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
