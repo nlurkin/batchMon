@@ -4,44 +4,8 @@ Created on 16 May 2014
 @author: Nicolas Lurkin
 '''
 from . import ConfigBatch
-from util import printDebug
+from util import printDebug, subCommand
 import re
-import subprocess
-import threading
-
-class subCommand(threading.Thread):
-    '''
-    SubCommand class. Executes a subprocess in a thread to allow for timeout.
-    If the command does not return within the allowed time, the thread is 
-    terminated (and the subprocess with it).
-    '''
-    def __init__(self, cmd, cmdInput, timeout):
-        threading.Thread.__init__(self)
-        self.cmd = cmd
-        self.cmdInput = cmdInput
-        self.timeout = timeout
-        self.subOutput = None
-    
-    def run(self):
-        '''
-        Overloaded from thread. Entry point of the Thread.
-        '''
-        self.p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-        (self.subOutput, _) = self.p.communicate(self.cmdInput)
-    
-    def Run(self):
-        '''
-        Entry point of the class
-        '''
-        self.start()
-        self.join(self.timeout)
-
-        if self.is_alive():
-            self.p.terminate()
-            self.join()
-        
-        return self.subOutput
-
 
 class Monitor2:
     '''
