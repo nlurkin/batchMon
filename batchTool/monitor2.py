@@ -13,7 +13,7 @@ class Monitor2:
     Main class for monitoring jobs
     '''
 
-    def __init__(self, keep, limit, arrayed):
+    def __init__(self, keep, limit):
         '''
         Constructor
         '''
@@ -27,11 +27,10 @@ class Monitor2:
         self.submitting = False
         self.currentlyChecking = False
         self.activeJobs = 0
-        self.arrayed = arrayed
     
     def newBatch(self, cfgFile, batchName, queue, test):
         printDebug(3, "Monitor creating new batch")
-        self.config.initCardFile(cfgFile, batchName, queue, test, self.arrayed)
+        self.config.initCardFile(cfgFile, batchName, queue, test)
         self.submitReady = False
 
     def loadBatch(self, jsonFile):

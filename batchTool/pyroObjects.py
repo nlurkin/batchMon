@@ -26,12 +26,12 @@ class JobServer:
     #==================
     # Called by client
     #==================
-    def addBatch(self, cardFile, name, queue, test, keep, limit, arrayed):
+    def addBatch(self, cardFile, name, queue, test, keep, limit):
         printDebug(3, "Adding new batch %s" % name)
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep, limit, arrayed)
+        batch = Monitor2(keep, limit)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
     
@@ -147,10 +147,7 @@ class JobServer:
                         clients.resetSubmit(len(batch["monitor"].submitList))
                 
                 #Start the submit loop in its own thread because can take a very long time again.
-                if batch["monitor"].arrayed:
-                    t = threading.Thread(target=self.submitLoopArrayed, args=(batch,))
-                else:
-                    t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t = threading.Thread(target=self.submitLoopArrayed, args=(batch,))
                 t.setName(name)
                 t.daemon = True
                 t.start()
@@ -183,35 +180,6 @@ class JobServer:
                 finally:
                     printDebug(3, "["+cThread.name+"] release mutex")
                     self.mutex.release()
-        except Exception:
-            printDebug(1, "["+cThread.name+"] Exception")
-            printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
-    
-    def submitLoop(self, batch):
-        cThread = threading.currentThread()
-        printDebug(3, "["+cThread.name+"] Enter submit loop")
-        try:
-            #Reset submit flag
-            batch["monitor"].submitting = False
-            printDebug(3, "["+cThread.name+"] Number of jobs in Ready state: " + str(batch["monitor"].config.getJobsNumberReady()))
-            
-            #Go through all the jobs that are ready and submit them
-            for i, job in enumerate(batch["monitor"].generateJobs()):
-                        printDebug(3, "["+cThread.name+"] Generate job " + str(i))
-                        batch["monitor"].submit(job)
-                        printDebug(3, "["+cThread.name+"] acquire mutex")
-                        
-                        #Notify the clients that the job was submitted
-                        if self.mutex.acquire():
-                            try:
-                                for clients in batch["clients"]:
-                                    clients.displayJobSent(job.jobID, job.index, i)
-                            except Exception:
-                                printDebug(1, "["+cThread.name+"] Exception:")
-                                printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
-                            finally:
-                                printDebug(3, "["+cThread.name+"] release mutex")
-                                self.mutex.release()
         except Exception:
             printDebug(1, "["+cThread.name+"] Exception")
             printDebug(1, "".join(Pyro4.util.getPyroTraceback()))

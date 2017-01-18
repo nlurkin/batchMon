@@ -165,7 +165,7 @@ fileList:
 		self.inputFilesList = []
 
 	
-	def initCardFile(self, cardFile, name, queue, test=False, arrayed=False):
+	def initCardFile(self, cardFile, name, queue, test=False):
 		'''
 		Set the card file for the batch. Read it and generate the jobs.
 		'''
@@ -183,10 +183,6 @@ fileList:
 			self._checkOutputDir()
 			
 		self._readInputList(test)
-		if arrayed:
-			self._generateScriptArrayed()
-		else:
-			self._generateScript()
 	
 	def load(self, jsonFile):
 		'''
@@ -236,7 +232,7 @@ fileList:
 		dico["jobIndex"] = "$((${LSB_JOBINDEX}-1))"
 		if fileName:
 			fileList = ""
-			for i,f in enumerate(fileName):
+			for i,_ in enumerate(fileName):
 				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}" % (i+1, step)
 				fileList = fileList + ("${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}\n" % (i+1, step))
 			dico["fileList"] = fileList.rstrip("\n")
@@ -387,27 +383,25 @@ fileList:
 		
 		return sReturn
 	
-	def _generateScript(self):
-		'''
-		Generate scripts for all jobs
-		'''
+	def generateScripts(self, jobsList):
+		if len(jobsList)>1:
+			for job in jobsList:
+				self._generateJobScriptArrayed(job.index)
+		else:
+			self._generateJobScript(jobsList[0].index)
 		
+	def _generateJobScript(self, jobIndex):
 		sReturn = "#Pre \n%s \n#Command \n%s \n#Post \n%s"
-		indexList = range(0,self.jobNumber)
-		for i in indexList:
-			#Generate the $-parameter dictionary
-			dico = self._buildSearchMap(self.jobsList[i].index, self.jobsList[i].inputFile)
-			#Apply the dictionary for the 3 parts of the script
-			pre = self._readAndReplace(self.preExecute, dico)
-			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
-			post = self._readAndReplace(self.postExecute, dico)
-			#Set the script
-			self.jobsList[i].script = sReturn % (pre, command, post)
+
+		#Generate the $-parameter dictionary
+		dico = self._buildSearchMap(self.jobsList[jobIndex].index, self.jobsList[jobIndex].inputFile)
+		#Apply the dictionary for the 3 parts of the script
+		pre = self._readAndReplace(self.preExecute, dico)
+		command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
+		post = self._readAndReplace(self.postExecute, dico)
+		#Set the script
+		self.jobsList[jobIndex].script = sReturn % (pre, command, post)
 			
-		#Create the final job script if exists
-		if len(indexList)>0 and self.finalJob:
-			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
-	
 	def _generateBashArray(self):
 		listString = "fileName[0]=aligning\n"
 		for i,f in enumerate(self.inputFilesList):
@@ -415,33 +409,28 @@ fileList:
 		
 		return listString
 		
-		
-	def _generateScriptArrayed(self):
-		'''
-		Generate scripts for all jobs
-		'''
-		
+	def _generateJobScriptArrayed(self, jobIndex):
 		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		sFileList = self._generateBashArray()
 		indexList = range(0,self.jobNumber)
 		
 		if len(indexList)>0:
 			#Generate the $-parameter dictionary
-			dico = self._buildSearchMapArrayed(len(self.jobsList[0].inputFile), self.jobsList[0].inputFile)
+			dico = self._buildSearchMapArrayed(len(self.jobsList[jobIndex].inputFile), self.jobsList[jobIndex].inputFile)
 			#Apply the dictionary for the 3 parts of the script
 			pre = self._readAndReplace(self.preExecute, dico)
 			command = self._readAndReplace("%s %s" % (self.executable, self.optTemplate), dico)
 			post = self._readAndReplace(self.postExecute, dico)
 			#Set the script
-			self.jobsList[0].script = sReturn % (sFileList, pre, command, post)
-		for i in indexList:
-			self.jobsList[i].script = self.jobsList[0].script
-			
+			self.jobsList[jobIndex].script = sReturn % (sFileList, pre, command, post)
+	
+	def _generateFinalJobScript(self):
+		indexList = range(0,self.jobNumber)	
 		#Create the final job script if exists
 		if len(indexList)>0 and self.finalJob:
+			dico = self._buildSearchMapArrayed(len(self.jobsList[0].inputFile), self.jobsList[0].inputFile)
 			self.finalJob.script = self._readAndReplace(self.finalJob.script, dico)
-			
-			
+		
 	def __str__(self):
 		'''
 		String representation
@@ -615,3 +604,12 @@ fileList:
 		Is the final job finished
 		'''
 		return self.finalizeStage==2 or self.finalizeStage==-2
+
+
+if __name__=='__main__':
+	config = ConfigBatch()
+	config.initCardFile("test/testConfig", "xxx", "8nm", False)
+	for f in config.jobsList:
+		config._generateJobScript(f.index)
+		print f.script
+	
