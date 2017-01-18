@@ -93,31 +93,6 @@ class Monitor2:
             self.submitList.extend(self.reSubmit[:])
             self.reSubmit = []
     
-    def monitorArrayed(self):
-        cmd = ["bjobs -wa"]
-        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (monOutput, _) = subCmd.communicate()
-        
-        self.activeJobs = 0
-        for line in monOutput.splitlines():
-            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*" + self.config.name + "\[([0-9]+)\]", line)
-            
-            if m:
-                lxbatchStatus = m.group(2)
-                jobArrIndex = m.group(3)
-                
-                if lxbatchStatus=="RUN" or lxbatchStatus=="PEND":
-                    self.activeJobs += 1 
-                redo,index = self.config.updateJob("%s.%s" % (m.group(1), jobArrIndex), {"status":lxbatchStatus}, self.keepOutput, int(jobArrIndex))
-                if redo:
-                    self.reSubmit.append(index)
-        
-        if self.submitting == False and len(self.reSubmit)>0:
-            self.submitReady = True
-            self.submitList.extend(self.reSubmit[:])
-            self.reSubmit = []
-
-            
     def submitInit(self):
         printDebug(3, "Monitor initial submit")
         self.config.enableNew()

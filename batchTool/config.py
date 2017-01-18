@@ -383,13 +383,6 @@ fileList:
 		
 		return sReturn
 	
-	def generateScripts(self, jobsList):
-		if len(jobsList)>1:
-			for job in jobsList:
-				self._generateJobScriptArrayed(job.index)
-		else:
-			self._generateJobScript(jobsList[0].index)
-		
 	def _generateJobScript(self, jobIndex):
 		sReturn = "#Pre \n%s \n#Command \n%s \n#Post \n%s"
 
@@ -440,6 +433,14 @@ fileList:
 			files += str(job) + "\n"
 		return self._reprTemplate % (hex(id(self)), self.cardFile, self.jobNumber, self.preExecute, self.executable, self.optTemplate, self.postExecute, files)
 	
+	def generateScripts(self, jobsList):
+		if len(jobsList)>1:
+			for job in jobsList:
+				self._generateJobScriptArrayed(job.index)
+		else:
+			self._generateJobScript(jobsList[0].index)
+		
+
 	def parseFailReason(self, job):
 		'''
 		Parse the output to determine the reason of the failure and decide whether it is worth retsarting the job 
