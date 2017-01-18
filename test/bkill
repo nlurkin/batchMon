@@ -1,0 +1,22 @@
+#!/bin/env python
+import sys
+from time import sleep
+
+sleep(10)
+
+if len(sys.argv)>1:
+    for opt,optn in zip(sys.argv[:-1],sys.argv[1:]):
+        if opt=='-J':
+            name = optn
+
+with open("jobs.list", "r") as fd:
+    filedata = fd.read()
+    
+with open("jobs.list", "w") as fd:
+    for line in filedata.split("\n"):
+        if len(line)>0:
+            jobID,jobIndex,jobName,jobState  = line.split()
+            if jobName==name:
+                line = "{} {} {} EXIT\n".format(jobID, jobIndex, jobName)
+        fd.write(line)
+        

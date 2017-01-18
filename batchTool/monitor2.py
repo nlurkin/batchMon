@@ -98,6 +98,10 @@ class Monitor2:
         self.config.enableNew()
         self.submitReady = True
     
+    def deleteJobs(self):
+        printDebug(3, "Delete jobs " + self.config.name)
+        getLSFMonitorInstance().deleteJobs(self.config.name)
+        
     def checkFinalize(self):
         if self.config.finalizeStage==0:
             if self.config.finalJob==None:

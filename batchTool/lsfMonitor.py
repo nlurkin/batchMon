@@ -120,6 +120,10 @@ class LSFMonitor(object):
         
         return jobID,jobIndex
     
+    def deleteJobs(self, name):
+        cmd = ["bkill -J " + name]
+        _ = subCommand(cmd, None, 30).Run()
+        
     def refreshInfo(self):
         cmd = ["bjobs -wa"]
         monOutput = subCommand(cmd, None, 10).Run()

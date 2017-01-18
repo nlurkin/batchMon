@@ -46,7 +46,15 @@ class JobServer:
         
     def removeBatch(self, name):
         printDebug(3, "Removing batch %s" % name)
+        t = threading.Thread(target=self.doRemove, args=(name,))
+        t.setName(name)
+        t.daemon = True
+        t.start()
+        
+    def doRemove(self, name):
         if name in self.listBatch:
+            if self.listBatch[name]['monitor'].activeJobs>0:
+                self.listBatch[name]['monitor'].deleteJobs()
             del self.listBatch[name]
             
     def registerClient(self, name, clientUri):
