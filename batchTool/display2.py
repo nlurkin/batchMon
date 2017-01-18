@@ -461,6 +461,7 @@ class SummaryWindow(MyWindow):
 			self._updateStats(dataObject.jobStats)
 
 	def _updateStats(self, stats):
+		self._windowHandles[0].clear()
 		self._windowHandles[0].addstr(0,0,"Failed attempts")
 		self._windowHandles[0].addstr(0,20,"Pending jobs {0}   ".format(stats["pending"]["value"]))
 		self._windowHandles[0].addstr(0,40,"Running jobs {0}   ".format(stats["running"]["value"]))
@@ -481,6 +482,7 @@ class SummaryWindow(MyWindow):
 			if pend>0 or run>0 or fail>0:
 				self._windowHandles[0].addstr(1+i,5,"{0} attempts:".format(aNumber))
 				i+=1
+				
 		if stats["failed"]["permanent"]>0:
 			self._windowHandles[0].addstr(1+i,5,"Permanent:".format(aNumber))
 			self._windowHandles[0].addstr(1+i,65,str(stats["failed"]["permanent"]))
@@ -493,8 +495,7 @@ class SubmitWindow(MyWindow):
 		super(SubmitWindow, self).__init__(0, vpos, screen)
 		
 		self._submitTotal = 0
-		self._submitCurrent = 0
-		self._submitIndex = (0,0)
+		self._submitIndex = (-1,0)
 		
 	
 	def generate(self):
@@ -505,6 +506,7 @@ class SubmitWindow(MyWindow):
 
 	def initSubmission(self, total):
 		self._submitTotal = total
+		self._submitIndex = (-1,0)
 		self.clear()
 		self.repaintFull()
 		
