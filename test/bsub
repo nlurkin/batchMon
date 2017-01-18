@@ -1,7 +1,38 @@
-#!/bin/sh
+#!/bin/env python
+from random import randint
+import re
+import sys
 
-RANDOM=$$
 
-num=$RANDOM
-echo "bsub> Job <$num> is submitted to default queue <8nm>."
-echo $num >> jobs.list
+rannum=randint(10000,99999)
+
+def setName(opt):
+    m = re.search("(.*)\[(.*)\]", opt)
+    if m:
+        name = m.group(1)
+        array = m.group(2).split('-')
+        if len(array)==1:
+            array.append(int(array[0]))
+    else:
+        name = "blah"
+        array = [-1,-1]
+        
+    return name,array
+
+name = "blah"
+array = [-1,-1]
+queue = "8nm"
+
+if len(sys.argv)>1:
+    for opt,optn in zip(sys.argv[:-1],sys.argv[1:]):
+        if opt=='-J':
+            name,array = setName(optn)
+        elif opt=='-q':
+            queue = optn
+        
+print "bsub> Job <{}> is submitted to default queue <{}>.".format(rannum,queue)
+
+with open("jobs.list", "a") as fd:
+    print array
+    for x in xrange(int(array[0]),int(array[1])+1):
+        fd.write("{} {} {} PEND\n".format(rannum, x, name))

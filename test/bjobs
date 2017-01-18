@@ -1,14 +1,12 @@
-list=`cat jobs.list`
+#!/bin/env python
 
-	echo "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME"
-for el in $list; do
-	echo "$el     nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40"
-done
+lformat ="{:<10}nlurkin {:<6}8nm        lxplus007.cern.ch    -        {:<11}Jan 18 16:17"
 
-#JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
-#834900844 nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40
+print "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME"
+with open("jobs.list", 'r') as fd:
+	for line in fd:
+		num,ind,name,stat = line.split()
+		if int(ind)!=-1:
+			name = "{}[{}]".format(name,ind)
+		print lformat.format(num,stat,name)
 
-
-#JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
-#834900844 nlurkin PEND  8nm        lxplus007.c             ./toto2    Jan 16 18:40
-#834830633 nlurkin EXIT  8nm        lxplus007.c p06108707c4 ./xxx      Jan 16 16:30
