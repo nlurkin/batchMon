@@ -6,11 +6,11 @@ Created on 16 May 2014
 import json
 import os
 import shutil
-import sys
 import time
 
 import FSSelector
 import SimpleConfigParser
+from batchTool.util import TwoLayerDict
 
 
 class BatchToolExceptions:
@@ -143,7 +143,7 @@ fileList:
 		self.maxJobs = 0
 		self.maxAttempts = 5
 		
-		self.jobCorrespondance = {}
+		self.jobCorrespondance = TwoLayerDict()
 		
 		self.outputDir = None
 		self.outputFile = None
