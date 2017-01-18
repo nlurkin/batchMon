@@ -1,7 +1,8 @@
 #!/bin/env python
+from time import sleep
 
 lformat ="{:<10}nlurkin {:<6}8nm        lxplus007.cern.ch    -        {:<11}Jan 18 16:17"
-
+sleep(5)
 print "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME"
 with open("jobs.list", 'r') as fd:
 	for line in fd:

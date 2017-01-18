@@ -123,13 +123,15 @@ class JobServer:
             self.mutex.release()
         
     def mainLoop(self):
-        getLSFMonitorInstance().refreshInfo()
+        #Start monitor function for each batch in its own thread because can be very slow and block the server
+        tMon = threading.Thread(target=getLSFMonitorInstance().refreshInfo)
+        tMon.daemon = True
+        tMon.start()
+        
         for name,batch in self.listBatch.items():
             
-            #Start monitor function for each batch in its own thread because can be very slow and block the server
-            tMon = threading.Thread(target=batch["monitor"].monitor)
-            tMon.daemon = True
-            tMon.start()
+            #Update info for each monitor
+            batch["monitor"].monitor()
             
             #Send summary to all clients
             for clients in batch["clients"]:
