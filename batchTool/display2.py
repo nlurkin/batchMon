@@ -16,7 +16,7 @@ def log(*text):
 		mode = "w"
 		first = False
 	with open("xxx",mode) as fd:
-		fd.write("{}\n".format(str(text)))
+		fd.write("{0}\n".format(str(text)))
 
 class MyWindow(object):
 	'''
@@ -90,7 +90,7 @@ class Header(MyWindow):
 		handle.move(1,0)
 		for key,text in self._menuList:
 			handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-			handle.addstr(" {}: {} ".format(key,text) ,curses.color_pair(1))
+			handle.addstr(" {0}: {1} ".format(key,text) ,curses.color_pair(1))
 		handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		handle.chgat(curses.color_pair(1))
 		
