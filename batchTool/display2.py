@@ -7,10 +7,12 @@ import curses
 import datetime
 import sys
 
+doLog = False
 first = True
 def log(*text):
-	global first
-#	return
+	global first, doLog
+	if not doLog:
+		return
 	mode = "a"
 	if first:
 		mode = "w"
@@ -309,6 +311,7 @@ class MainDisplay(MyWindow):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		header = Header(self._blockPosition[1], self._stdscr, "LXBATCH job monitoring")
 		header.addMenuEntry("K", "Kill server")
+		header.addMenuEntry("r", "Refresh list")
 		header.addMenuEntry("RIGHT", "Details of selected job")
 		header.addMenuEntry("UP/DOWN", "Navigate jobs")
 		header.addMenuEntry("DEL", "Remove batch")
@@ -321,17 +324,20 @@ class MainDisplay(MyWindow):
 	
 	def doUpdate(self, dataObject):
 		if hasattr(dataObject, "batchList"):
-			self._updateList(dataObject.batchList)
+			self._updateList(dataObject.batchList, dataObject.lastIndex)
 	
-	def _updateList(self, l):
+	def _updateList(self, l, index):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self._subWindows[1].clearList()
 		self._subWindows[1].updateList(l)
 		self._subWindows[1].generateList()
+		self._subWindows[1].goTo(index)
 	
 	def keyPressed(self, key):
 		if curses.unctrl(key) == "K":
 			return DCommands(DCommands.Kill)
+		elif curses.unctrl(key) == "r":
+			return DCommands(DCommands.Refresh)
 
 		return MyWindow.keyPressed(self, key)
 
@@ -455,6 +461,7 @@ class SummaryWindow(MyWindow):
 			self._updateStats(dataObject.jobStats)
 
 	def _updateStats(self, stats):
+		self._windowHandles[0].clear()
 		self._windowHandles[0].addstr(0,0,"Failed attempts")
 		self._windowHandles[0].addstr(0,20,"Pending jobs {0}   ".format(stats["pending"]["value"]))
 		self._windowHandles[0].addstr(0,40,"Running jobs {0}   ".format(stats["running"]["value"]))
@@ -475,6 +482,7 @@ class SummaryWindow(MyWindow):
 			if pend>0 or run>0 or fail>0:
 				self._windowHandles[0].addstr(1+i,5,"{0} attempts:".format(aNumber))
 				i+=1
+				
 		if stats["failed"]["permanent"]>0:
 			self._windowHandles[0].addstr(1+i,5,"Permanent:".format(aNumber))
 			self._windowHandles[0].addstr(1+i,65,str(stats["failed"]["permanent"]))
@@ -487,8 +495,7 @@ class SubmitWindow(MyWindow):
 		super(SubmitWindow, self).__init__(0, vpos, screen)
 		
 		self._submitTotal = 0
-		self._submitCurrent = 0
-		self._submitIndex = (0,0)
+		self._submitIndex = (-1,0)
 		
 	
 	def generate(self):
@@ -499,6 +506,7 @@ class SubmitWindow(MyWindow):
 
 	def initSubmission(self, total):
 		self._submitTotal = total
+		self._submitIndex = (-1,0)
 		self.clear()
 		self.repaintFull()
 		

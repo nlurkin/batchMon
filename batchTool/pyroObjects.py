@@ -4,7 +4,6 @@ Created on Sep 30, 2014
 @author: ncl
 '''
 
-import curses
 import threading
 
 import Pyro4
@@ -12,6 +11,7 @@ import Pyro4
 from . import Monitor2, Display2
 from util import printDebug
 from batchTool.display2 import DCommands, DObject
+from batchTool.lsfMonitor import getLSFMonitorInstance
 
 stopAll = False
 class JobServer:
@@ -26,12 +26,12 @@ class JobServer:
     #==================
     # Called by client
     #==================
-    def addBatch(self, cardFile, name, queue, test, keep, limit, arrayed):
+    def addBatch(self, cardFile, name, queue, test, keep, limit):
         printDebug(3, "Adding new batch %s" % name)
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep, limit, arrayed)
+        batch = Monitor2(keep, limit)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
     
@@ -46,7 +46,15 @@ class JobServer:
         
     def removeBatch(self, name):
         printDebug(3, "Removing batch %s" % name)
+        t = threading.Thread(target=self.doRemove, args=(name,))
+        t.setName(name)
+        t.daemon = True
+        t.start()
+        
+    def doRemove(self, name):
         if name in self.listBatch:
+            if self.listBatch[name]['monitor'].activeJobs>0:
+                self.listBatch[name]['monitor'].deleteJobs()
             del self.listBatch[name]
             
     def registerClient(self, name, clientUri):
@@ -80,8 +88,9 @@ class JobServer:
     def getBatchList(self):
         printDebug(3, "Sending batch list")
         l = []
-        for name,obj in self.listBatch.iteritems():
-            l.append({'name':name, 'stats':obj["monitor"].config.getStatusStats()})
+        orderedNames = sorted(self.listBatch.keys())
+        for name in orderedNames:
+            l.append({'name':name, 'stats':self.listBatch[name]["monitor"].config.getStatusStats()})
         return l
     
     def submitInit(self, name):
@@ -122,12 +131,15 @@ class JobServer:
             self.mutex.release()
         
     def mainLoop(self):
+        #Start monitor function for each batch in its own thread because can be very slow and block the server
+        tMon = threading.Thread(target=getLSFMonitorInstance().refreshInfo)
+        tMon.daemon = True
+        tMon.start()
+        
         for name,batch in self.listBatch.items():
             
-            #Start monitor function for each batch in its own thread because can be very slow and block the server
-            tMon = threading.Thread(target=batch["monitor"].monitor)
-            tMon.daemon = True
-            tMon.start()
+            #Update info for each monitor
+            batch["monitor"].monitor()
             
             #Send summary to all clients
             for clients in batch["clients"]:
@@ -145,10 +157,7 @@ class JobServer:
                         clients.resetSubmit(len(batch["monitor"].submitList))
                 
                 #Start the submit loop in its own thread because can take a very long time again.
-                if batch["monitor"].arrayed:
-                    t = threading.Thread(target=self.submitLoopArrayed, args=(batch,))
-                else:
-                    t = threading.Thread(target=self.submitLoop, args=(batch,))
+                t = threading.Thread(target=self.submitLoopArrayed, args=(batch,))
                 t.setName(name)
                 t.daemon = True
                 t.start()
@@ -167,49 +176,20 @@ class JobServer:
                         printDebug(3, "["+cThread.name+"] Generate job " + str(i))
                         jList.append(job)
             
-            lsfID = batch["monitor"].submitArrayed(jList)
+            lsfID,index = batch["monitor"].submit(jList)
             printDebug(3, "["+cThread.name+"] acquire mutex")
                         
             #Notify the clients that the job was submitted
             if self.mutex.acquire():
                 try:
                     for clients in batch["clients"]:
-                        clients.displayJobSent(lsfID, -1, len(jList)-1)
+                        clients.displayJobSent(lsfID, index, len(jList)-1)
                 except Exception:
                     printDebug(1, "["+cThread.name+"] Exception:")
                     printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
                 finally:
                     printDebug(3, "["+cThread.name+"] release mutex")
                     self.mutex.release()
-        except Exception:
-            printDebug(1, "["+cThread.name+"] Exception")
-            printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
-    
-    def submitLoop(self, batch):
-        cThread = threading.currentThread()
-        printDebug(3, "["+cThread.name+"] Enter submit loop")
-        try:
-            #Reset submit flag
-            batch["monitor"].submitting = False
-            printDebug(3, "["+cThread.name+"] Number of jobs in Ready state: " + str(batch["monitor"].config.getJobsNumberReady()))
-            
-            #Go through all the jobs that are ready and submit them
-            for i, job in enumerate(batch["monitor"].generateJobs()):
-                        printDebug(3, "["+cThread.name+"] Generate job " + str(i))
-                        batch["monitor"].submit(job)
-                        printDebug(3, "["+cThread.name+"] acquire mutex")
-                        
-                        #Notify the clients that the job was submitted
-                        if self.mutex.acquire():
-                            try:
-                                for clients in batch["clients"]:
-                                    clients.displayJobSent(job.jobID, job.index, i)
-                            except Exception:
-                                printDebug(1, "["+cThread.name+"] Exception:")
-                                printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
-                            finally:
-                                printDebug(3, "["+cThread.name+"] release mutex")
-                                self.mutex.release()
         except Exception:
             printDebug(1, "["+cThread.name+"] Exception")
             printDebug(1, "".join(Pyro4.util.getPyroTraceback()))
@@ -320,6 +300,3 @@ class DisplayClient(object):
             retCmd = DCommands(DCommands.NoCMD)
             
         return retCmd
-                #elif curses.unctrl(k) == "r":
-                    #Refresh the list of jobs
-                    #return +5, ""

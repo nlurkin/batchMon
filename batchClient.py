@@ -23,7 +23,7 @@ import socket
 import sys
 
 import Pyro4
-from batchTool import DisplayClient
+from batchTool import DisplayClient, display2
 import select
 
 
@@ -95,7 +95,7 @@ def registerClient(name):
     #Register the client and get basic info from server in return
     startTime, headers, totalJobs, summary = server.registerClient(name, serveruri)
     
-    #client.screen.activateJobWindow()
+    client.screen.activateJobWindow()
     #Display them
     client.setStartTime(startTime)
     client.displayHeader(headers)
@@ -129,8 +129,8 @@ def argParser():
                         help="Test the existence of output files. Do not regenerate jobs for which the output file already exists")
     parser.add_argument('-n', '--name', action='store', default="config", 
                     help="Name of the monitor (used for later recovery, default:config)")
-    parser.add_argument('-a', '--arrayed', action='store_true', default=False, 
-                    help="Generate jobs array")
+    parser.add_argument('-d', '--debug', action='store_true', default=False, 
+                    help="Activate debugging")
     #parser.add_argument('-x', '--nocurse', action='store_true', 
     #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
@@ -169,7 +169,7 @@ def argParser():
         try:
             if not os.path.isabs(args.config):
                 args.config = os.getcwd()+"/"+args.config
-            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit, args.arrayed)
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()
@@ -187,6 +187,7 @@ def argParser():
         server.submitInit(args.name)
         return 
     
+    display2.doLog = args.debug
     #if args.nocurse:
     #    mainInit()
     #else:
