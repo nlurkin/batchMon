@@ -318,7 +318,8 @@ class MainDisplay(MyWindow):
 		header.generate()
 		self._subWindows.append(header)
 
-		jobsList = ListWindow(0, self._blockPosition[1]+5, 150, 30, 150, 100, self._stdscr)
+		maxsize = self._stdscr.getmaxyx()
+		jobsList = ListWindow(0, self._blockPosition[1]+5, maxsize[1], maxsize[0]-6, 150, 100, self._stdscr)
 		jobsList.generate()
 		self._subWindows.append(jobsList)
 	
