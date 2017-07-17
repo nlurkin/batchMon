@@ -432,9 +432,11 @@ fileList:
 		return self._reprTemplate % (hex(id(self)), self.cardFile, self.jobNumber, self.preExecute, self.executable, self.optTemplate, self.postExecute, files)
 	
 	def generateScripts(self, jobsList):
-		if len(jobsList)>0:
+		if len(jobsList)>1:
 			for job in jobsList:
 				self._generateJobScriptArrayed(job.index)
+		elif len(jobsList)==1:
+			self._generateJobScript(jobsList[0].index)
 
 	def parseFailReason(self, job):
 		'''
