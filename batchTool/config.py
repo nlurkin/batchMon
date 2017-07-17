@@ -3,15 +3,15 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
+import copy
 import json
 import os
 import shutil
 import time
-import copy
 
 import FSSelector
 import SimpleConfigParser
-from batchTool.util import TwoLayerDict
+from batchTool.util import TwoLayerDict, NoIndex_c
 
 
 class BatchToolExceptions:
@@ -38,6 +38,8 @@ def encode_dict(obj):
 		return obj.__dict__.__str__()
 	if isinstance(obj, TwoLayerDict):
 		return obj.__dict__
+	if isinstance(obj, NoIndex_c):
+		return str(obj)
 	return obj
 
 class BatchJob:
@@ -205,7 +207,10 @@ fileList:
 			self.jobCorrespondance = TwoLayerDict()
 			for k1,v1 in jobcorr.iteritems():
 				for k2,v2 in v1.iteritems():
-					self.jobCorrespondance[(int(k1),int(k2))] = int(v2)
+					if isinstance(k2, NoIndex_c):
+						self.jobCorrespondance[int(k1)] = int(v2)
+					else:
+						self.jobCorrespondance[(int(k1),int(k2))] = int(v2)
 	
 	def save(self, fileName):
 		'''
