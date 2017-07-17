@@ -80,6 +80,7 @@ def mainLoop():
                     pyroDaemon.events(eventsForDaemon)
             bServer.mainLoop()
             if pyroObjects.stopAll:
+                bServer.kill()
                 break
         except Pyro4.errors.TimeoutError:
             printDebug(3, "Timeout")
@@ -174,4 +175,13 @@ if __name__=="__main__":
         sys.settrace(trace_calls)
     else:
         main()
+    
+    try:
+        sys.stdout.close()
+    except:
+        pass
+    try:
+        sys.stderr.close()
+    except:
+        pass
     

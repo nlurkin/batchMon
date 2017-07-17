@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import time
+import copy
 
 import FSSelector
 import SimpleConfigParser
@@ -35,6 +36,8 @@ def encode_dict(obj):
 	'''
 	if isinstance(obj, BatchJob) or isinstance(obj,finalBatchJob):
 		return obj.__dict__.__str__()
+	if isinstance(obj, TwoLayerDict):
+		return obj.__dict__
 	return obj
 
 class BatchJob:
@@ -192,19 +195,27 @@ fileList:
 		Load a json file for an existing batch
 		'''
 		with open(jsonFile) as f:
-			[self.__dict__,jobsList] = json.load(f)
+			[dd,jobsList, jobcorr] = json.load(f)
+			self.__dict__.update(dd)
 			self.jobsList = []
 			for job in jobsList:
-				jsonstring = job.replace("'", '"').replace("None", 'null')
-				j = BatchJob(json.loads(jsonstring), None, None)
+				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"')
+				j = BatchJob(json.loads(jsonstring), None)
 				self.jobsList.append(j)
+			self.jobCorrespondance = TwoLayerDict()
+			for k1,v1 in jobcorr.iteritems():
+				for k2,v2 in v1.iteritems():
+					self.jobCorrespondance[(int(k1),int(k2))] = int(v2)
 	
 	def save(self, fileName):
 		'''
 		Save batch in json
 		'''
 		with open(fileName, "wb") as f:
-			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
+			dic = copy.deepcopy(self.__dict__)
+			del dic["jobsList"]
+			del dic["jobCorrespondance"]
+			json.dump([dic,self.jobsList, self.jobCorrespondance.dico], f, default=encode_dict, indent=4, separators=(',', ': '))
 
 	def _buildSearchMap(self, index, fileName):
 		'''
@@ -421,12 +432,9 @@ fileList:
 		return self._reprTemplate % (hex(id(self)), self.cardFile, self.jobNumber, self.preExecute, self.executable, self.optTemplate, self.postExecute, files)
 	
 	def generateScripts(self, jobsList):
-		if len(jobsList)>1:
+		if len(jobsList)>0:
 			for job in jobsList:
 				self._generateJobScriptArrayed(job.index)
-		else:
-			self._generateJobScript(jobsList[0].index)
-		
 
 	def parseFailReason(self, job):
 		'''
