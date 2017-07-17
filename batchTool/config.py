@@ -42,7 +42,7 @@ class BatchJob:
 	Class representing a single job
 	'''
 	
-	def __init__(self, data, index, seq):
+	def __init__(self, data, index):#, seq):
 		if data==None:
 			self.inputFile = []
 			self.index = index
@@ -51,7 +51,7 @@ class BatchJob:
 			self.status = None
 			self.attempts = -2
 			self.script = None
-			self.jobSeq = seq
+			self.jobSeq = index
 		else:
 			self.__dict__ = data
 	
@@ -182,8 +182,11 @@ fileList:
 				raise BatchToolExceptions.BadOption("Unable to test outputs: outputDir or outputFile not specified")
 			self._checkOutputDir()
 			
-		self._readInputList(test)
-	
+		self._readInputList()
+		
+		if test:
+			self._testAndUpdate()
+			
 	def load(self, jsonFile):
 		'''
 		Load a json file for an existing batch
@@ -252,7 +255,6 @@ fileList:
 		
 		#Output file is the outputDir + replaced template file name
 		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
-		#print path
 		if FSSelector.exists(path):
 			return False
 		return True
@@ -264,56 +266,41 @@ fileList:
 		if not FSSelector.exists(self.outputDir, True):
 			FSSelector.mkDir(self.outputDir)
 		
-	def _readInputList(self, test):
+	def _readInputList(self):
 		'''
 		Read the input list file and create one job for jobsGroup entry (1 line = 1 entry)
 		'''
 		with open(self.listFile,'r') as f:
-			j = 0
-			group = 0
-			i = 0
-			job = None
-			skip = False
+			group = 0 #keep number of files in job
+			i = 0 #keep file index
+			job = None #job pointer
 			for line in f:
 				self.inputFilesList.append(line.strip('\n'))
 				#If start index specified, skip the first startIndex groups
 				if i>=self.startIndex:
-					#Always create the job if we don't test
-					#Else create only if output file does not exist
-					#print "Test %s exists=%s" % (i,self._testOutputFile(i))
-					if (not test) or (group>0 or self._testOutputFile(i)):
-						if skip:
-							group += 1
-							if group==self.jobsGroup:
-								skip = False
-								group = 0
-								i += 1
-							continue
-						if group==0:
-							job = BatchJob(None, i, j)
-						job.addInputFile(line.strip('\n'))
-						group += 1
-						#print self.jobsGroup
-						if group==self.jobsGroup:
-							self.jobsList.append(job)
-							group = 0
-							j += 1
-							i += 1
-							job = None
-					else:
-						skip = True
-						group += 1
-						if group==self.jobsGroup:
-							skip = False
-							group = 0
-							i += 1
+					#Always create the job, if test is requested and the 
+					#output file already exists, we update it later
+					if group==0:
+						job = BatchJob(None, i)
+					job.addInputFile(line.strip('\n'))
+					group += 1
+					if group==self.jobsGroup:
+						self.jobsList.append(job)
+						group = 0
+						i += 1
+						job = None
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
 			if group>0 and job!=None:
 				self.jobsList.append(job)
 		self.jobNumber = len(self.jobsList)
-		
+	
+	def _testAndUpdate(self):
+		for job in self.jobsList:
+			if not self._testOutputFile(job.index):
+				job.status = "DONE"
+			
 	def _readCardFile(self):
 		'''
 		Read the card file and set the options
