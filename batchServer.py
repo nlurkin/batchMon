@@ -11,6 +11,7 @@ batchClients can connect to it to submit jobs or display monitoring information.
 
 __version__ = '3.0'
 
+import json
 import os
 import socket
 import sys
@@ -115,8 +116,13 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    with open(os.environ['HOME'] + "/.ns.cfg", "a") as f:
-        f.write("{0}\n".format(my_ip))
+    
+    with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
+        ips = json.load(f)
+
+    ips.add(my_ip)
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
+        json.dump(ips, f)
 
 def createServer():
     '''
