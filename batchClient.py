@@ -149,9 +149,12 @@ def argParser():
    
     serverFound = False
     
-    with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
-        ips = json.load(f)
-    
+    if os.path.exists(os.environ['HOME'] + "/.ns.cfg"):
+        with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
+            ips = set(json.load(f))
+    else:
+        ips = set()
+
     ips_copy = ips.copy()
     for ip in ips:
         print "Trying {0}".format(ip.rstrip())
@@ -164,9 +167,9 @@ def argParser():
             serverFound = True
         if serverFound:
             break
-    
+
     with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
-        json.dump(ips_copy, f)
+        json.dump(list(ips_copy), f)
         
     if not serverFound:
         print "No server found... Aborting"

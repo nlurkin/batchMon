@@ -116,13 +116,16 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    
-    with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
-        ips = json.load(f)
+   
+    if os.path.exists(os.environ['HOME'] + "/.ns.cfg"):
+        with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
+            ips = set(json.load(f))
+    else:
+        ips = set()
 
     ips.add(my_ip)
     with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
-        json.dump(ips, f)
+        json.dump(list(ips), f)
 
 def createServer():
     '''
