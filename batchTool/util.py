@@ -87,10 +87,10 @@ class TwoLayerDict(object):
                 return True
         return False
     
-    def __str__(self):
-        if len(self.dico)==0:
-            return "Empty"
-        return "\n".join(["{}: {}".format(k, ["{}.{}".format(k1,str(v1)) for k1,v1 in v.iteritems()]) for k,v in self.dico.iteritems()])
+    #def __str__(self):
+    #    if len(self.dico)==0:
+    #        return "Empty"
+    #    return "\n".join(["{}: {}".format(k, ["{}.{}".format(k1,str(v1)) for k1,v1 in v.iteritems()]) for k,v in self.dico.iteritems()])
 
 class subCommand(threading.Thread):
     '''

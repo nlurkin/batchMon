@@ -30,6 +30,22 @@ class BatchToolExceptions:
 		def __init__(self, text):
 			self.strerror = text
 
+def stringify(obj):
+	for key,val in obj.iteritems():
+		if type(key) is not str:
+			try:
+				obj[str(key)] = obj[key]
+			except:
+				try:
+					obj[repr(key)] = obj[key]
+				except:
+					pass
+			del obj[key]
+		if type(val) == dict:
+			val = stringify(val)
+			
+	return obj
+
 def encode_dict(obj):
 	'''
 	Encode a dictionary for json 
@@ -207,7 +223,7 @@ fileList:
 			self.jobCorrespondance = TwoLayerDict()
 			for k1,v1 in jobcorr.iteritems():
 				for k2,v2 in v1.iteritems():
-					if isinstance(k2, NoIndex_c):
+					if k2 == "NoIndex":
 						self.jobCorrespondance[int(k1)] = int(v2)
 					else:
 						self.jobCorrespondance[(int(k1),int(k2))] = int(v2)
@@ -220,7 +236,7 @@ fileList:
 			dic = copy.deepcopy(self.__dict__)
 			del dic["jobsList"]
 			del dic["jobCorrespondance"]
-			json.dump([dic,self.jobsList, self.jobCorrespondance.dico], f, default=encode_dict, indent=4, separators=(',', ': '))
+			json.dump([dic,self.jobsList, stringify(self.jobCorrespondance.dico)], f, default=encode_dict, indent=4, separators=(',', ': '))
 
 	def _buildSearchMap(self, index, fileName):
 		'''
