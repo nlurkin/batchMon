@@ -157,7 +157,11 @@ class ListWindow(MyWindow):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		
 		self._windowHandles.append(curses.newpad(self._padHeight, self._padWidth))
-	
+
+	def repaintFull(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._windowHandles[0].refresh(self._currentWindowPos, 0, self._blockPosition[1], self._blockPosition[0], self._blockPosition[1]+self._displayHeight, self._blockPosition[0]+self._displayWidth)
+
 	def repaint(self):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self._windowHandles[0].nooutrefresh(self._currentWindowPos, 0, self._blockPosition[1], self._blockPosition[0], self._blockPosition[1]+self._displayHeight, self._blockPosition[0]+self._displayWidth)
