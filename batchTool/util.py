@@ -109,8 +109,8 @@ class subCommand(threading.Thread):
         '''
         Overloaded from thread. Entry point of the Thread.
         '''
-        self.p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-        (self.subOutput, _) = self.p.communicate(self.cmdInput)
+        self.p = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (self.subOutput, self.subError) = self.p.communicate(self.cmdInput)
     
     def Run(self):
         '''
@@ -122,7 +122,7 @@ class subCommand(threading.Thread):
         if self.is_alive():
             self.p.terminate()
             self.join()
-        
+       
         return self.subOutput
 
 
