@@ -292,6 +292,8 @@ class DisplayClient(object):
                     retCmd.name = self.disconnectBatch()
                 elif retCmd.command == DCommands.Refresh:
                     retCmd.name = self.batchName
+                elif retCmd.command == DCommands.Resubmit:
+                    retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Submit:
                     retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Switch:

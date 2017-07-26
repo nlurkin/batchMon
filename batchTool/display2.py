@@ -107,6 +107,7 @@ class DCommands(object):
 	Refresh    = +100
 	Submit     = +101
 	Switch     = +102
+	Resubmit   = +103
 	
 	def __init__(self, Command, **kwargs):
 		self.command = Command
@@ -394,7 +395,7 @@ class JobDisplay(MyWindow):
 		if key == curses.KEY_LEFT:
 			return DCommands(DCommands.Back)
 		elif curses.unctrl(key) == "^R":
-			return DCommands(DCommands.Refresh)
+			return DCommands(DCommands.Resubmit)
 		elif curses.unctrl(key) == "^G":
 			return DCommands(DCommands.Submit)
 		elif curses.unctrl(key) == "^K":

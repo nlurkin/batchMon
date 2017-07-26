@@ -75,7 +75,7 @@ def mainLoop():
                 server.disconnectClient(retCmd.name, serveruri)
                 server.stop()
                 break
-            elif retCmd.command==DCommands.Refresh:
+            elif retCmd.command==DCommands.Resubmit:
                 #Reset failed jobs
                 server.resubmitFailed(retCmd.name)
             elif retCmd.command==DCommands.Submit:
