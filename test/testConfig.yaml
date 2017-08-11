@@ -1,0 +1,5 @@
+!include baseData.yaml 
+
+batchConfig:
+  <<: *dataConfig
+  listFile: /home/nlurkin/git/batchMon/test/testList.list

@@ -1,0 +1,20 @@
+dataConfig: &dataConfig
+  executable: /home/nlurkin/git/batchMon/test/test.sh
+  #listFile: /home/nlurkin/git/batchMon/test/testList.list
+  outputDir: /home/nlurkin/git/batchMon/test/outputTest
+  maxJobs: 5
+  outputFile: job_test$jobIndex.root
+  maxAttempts: 2
+  jobsGrouping: 2
+
+  optTemplate: $outputFile $jobIndex $fileName
+
+  preExecute: |
+    source ~/env32.sh
+    echo "$fileList"
+    echo $fileNameArr[1]
+
+  postExecute: |
+    ls
+    pwd
+    echo "mv $outputFile $outputDir/$outputFile"

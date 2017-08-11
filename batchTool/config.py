@@ -10,9 +10,18 @@ import shutil
 import time
 
 import FSSelector
-import SimpleConfigParser
+import yaml
 from batchTool.util import TwoLayerDict, NoIndex_c
 
+def readYamlFile(fileName):
+	fdString = ""
+	with open(fileName, "r") as fd:
+		for line in fd:
+			if "!include" in line and not "#" in line:
+				fdString += readYamlFile(" ".join(line.split()[1:]))
+			else:
+				fdString += line
+	return fdString
 
 class BatchToolExceptions:
 	'''
@@ -337,50 +346,54 @@ fileList:
 		'''
 		Read the card file and set the options
 		'''
-		cp = SimpleConfigParser.SimpleConfigParser()
-		cp.read(self.cardFile)
-		
+		cp = yaml.load(readYamlFile(self.cardFile))
+			
+		if "batchConfig" in cp:
+			cp = cp["batchConfig"]
+		else:
+			raise BatchToolExceptions.BadCardFileException("No batchConfig node")
+			
 		#Test mandatory options
-		if not cp.hasoption('listFile'):
+		if not "listFile" in cp:
 			raise BatchToolExceptions.BadCardFileException("Missing listFile")
-		if not cp.hasoption('executable'):
+		if not "executable" in cp:
 			raise BatchToolExceptions.BadCardFileException("Missing executable")
 		
-		self.listFile = cp.getoption("listFile")
-		self.executable = cp.getoption("executable")
+		self.listFile = cp["listFile"]
+		self.executable = cp["executable"]
 		
-		if cp.hasoption("optTemplate"):
-			self.optTemplate = cp.getoption("optTemplate")
+		if "optTemplate" in cp:
+			self.optTemplate = cp["optTemplate"]
 
-		if cp.hasoption("preExecute"):
-			self.preExecute = cp.getoption("preExecute")
+		if "preExecute" in cp:
+			self.preExecute = cp["preExecute"]
 
-		if cp.hasoption("postExecute"):
-			self.postExecute = cp.getoption("postExecute")
+		if "postExecute" in cp:
+			self.postExecute = cp["postExecute"]
 	
-		if cp.hasoption("startIndex"):
-			self.startIndex = int(cp.getoption("startIndex"))
+		if "startIndex" in cp:
+			self.startIndex = int(cp["startIndex"])
 
-		if cp.hasoption("maxJobs"):
-			self.maxJobs = int(cp.getoption("maxJobs"))
+		if "maxJobs" in cp:
+			self.maxJobs = int(cp["maxJobs"])
 
-		if cp.hasoption("maxAttempts"):
-			self.maxAttempts = int(cp.getoption("maxAttempts"))
+		if "maxAttempts" in cp:
+			self.maxAttempts = int(cp["maxAttempts"])
 		
-		if cp.hasoption("outputDir"):
-			self.outputDir = cp.getoption("outputDir")
+		if "outputDir" in cp:
+			self.outputDir = cp["outputDir"]
 
-		if cp.hasoption("outputFile"):
-			self.outputFile = cp.getoption("outputFile")
+		if "outputFile" in cp:
+			self.outputFile = cp["outputFile"]
 
-		if cp.hasoption("requirement"):
-			self.requirement = cp.getoption("requirement")
+		if "requirement" in cp:
+			self.requirement = cp["requirement"]
 		
-		if cp.hasoption("finalScript"):
-			self.finalJob = finalBatchJob(cp.getoption("finalScript"))
+		if "finalScript" in cp:
+			self.finalJob = finalBatchJob(cp["finalScript"])
 		
-		if cp.hasoption("jobsGrouping"):
-			self.jobsGroup = int(cp.getoption("jobsGrouping"))
+		if "jobsGrouping" in cp:
+			self.jobsGroup = int(cp["jobsGrouping"])
 
 
 	def _readAndReplace(self, string, searchMap):
