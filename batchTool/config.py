@@ -11,6 +11,7 @@ import time
 
 import FSSelector
 import yaml
+import Pyro4
 from batchTool.util import TwoLayerDict, NoIndex_c
 
 def readYamlFile(fileName):
@@ -346,18 +347,23 @@ fileList:
 		'''
 		Read the card file and set the options
 		'''
-		cp = yaml.load(readYamlFile(self.cardFile))
+		try:
+			cp = yaml.load(readYamlFile(self.cardFile))
+		except yaml.scanner.ScannerError as e:
+			raise Pyro4.errors.PyroError(str(e))
+		except yaml.composer.ComposerError as e:
+			raise Pyro4.errors.PyroError(str(e))
 			
 		if "batchConfig" in cp:
 			cp = cp["batchConfig"]
 		else:
-			raise BatchToolExceptions.BadCardFileException("No batchConfig node")
+			raise Pyro4.errors.PyroError("No batchConfig node")
 			
 		#Test mandatory options
 		if not "listFile" in cp:
-			raise BatchToolExceptions.BadCardFileException("Missing listFile")
+			raise Pyro4.errors.PyroError("Missing listFile")
 		if not "executable" in cp:
-			raise BatchToolExceptions.BadCardFileException("Missing executable")
+			raise Pyro4.errors.PyroError("Missing executable")
 		
 		self.listFile = cp["listFile"]
 		self.executable = cp["executable"]

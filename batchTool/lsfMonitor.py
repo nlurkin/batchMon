@@ -39,7 +39,7 @@ def formatArray(idList):
                 currRun = -1
     if startRun==currRun and startRun!=-1:
         listRuns.append("%i" % (startRun+1))
-    else:
+    elif startRun!=-1:
         listRuns.append("%i-%i" % (startRun+1, currRun+1))
     
     arrString = ""
