@@ -87,7 +87,8 @@ class LSFMonitor(object):
         cmd[0] = cmd[0] + " -J \"" + jobName + "\""
         if config.requirement:
             cmd[0] = cmd[0] + " -R \"" + config.requirement + "\""
-        
+        cmd[0] = cmd[0] + " -u lsf-nomail@cern.ch"
+
         #Run the command with timeout
         #print jobs[0].script
         subOutput = subCommand(cmd, jobs[0].script, 10).Run()
