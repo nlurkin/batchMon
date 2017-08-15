@@ -342,6 +342,7 @@ fileList:
 		for job in self.jobsList:
 			if not self._testOutputFile(job.index):
 				job.status = "DONE"
+				job.attempts = 0
 			
 	def _readCardFile(self):
 		'''
@@ -503,10 +504,10 @@ fileList:
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			if jobArraySeq==None:
+			if isinstance(jobID[1], NoIndex_c):
 				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
 			else:
-				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID) + "." + str(jobArraySeq)
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(jobID[0]) + "." + str(jobID[1])
 			if job.status!=dico["status"]:
 				if dico["status"]=="DONE":
 					#clean output
