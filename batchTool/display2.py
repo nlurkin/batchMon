@@ -218,9 +218,9 @@ class ListWindow(MyWindow):
 		''' Verify if pad needs scrolling '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		if cursor > (self._currentWindowPos + self._displayHeight):
-			self._currentWindowPos += 1
+			self._currentWindowPos = cursor - self._displayHeight
 		elif cursor < self._currentWindowPos:
-			self._currentWindowPos -= 1
+			self._currentWindowPos = cursor
 
 	def goTop(self):
 		''' Go at the first element '''
@@ -302,6 +302,18 @@ class ListWindow(MyWindow):
 			self.goDown()
 		elif key == curses.KEY_UP:
 			self.goUp()
+		elif key == curses.KEY_NPAGE:
+			if self._currentCursorPos+10 > len(self._listElements):
+				index = len(self._listElements)-1
+			else:
+				index = self._currentCursorPos+10
+			self.goTo(index)
+		elif key == curses.KEY_PPAGE:
+			if self._currentCursorPos-10 < 0:
+				index = 0
+			else:
+				index = self._currentCursorPos-10
+			self.goTo(index)
 		elif key == curses.KEY_RIGHT:
 			return DCommands(DCommands.Select,index=self._currentCursorPos)
 		elif key == curses.KEY_DC:
