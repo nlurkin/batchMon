@@ -11,6 +11,7 @@ batchClients can connect to it to submit jobs or display monitoring information.
 
 __version__ = '3.0'
 
+import json
 import os
 import socket
 import sys
@@ -80,6 +81,7 @@ def mainLoop():
                     pyroDaemon.events(eventsForDaemon)
             bServer.mainLoop()
             if pyroObjects.stopAll:
+                bServer.kill()
                 break
         except Pyro4.errors.TimeoutError:
             printDebug(3, "Timeout")
@@ -114,8 +116,16 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-    with open(os.environ['HOME'] + "/.ns.cfg", "a") as f:
-        f.write("{0}\n".format(my_ip))
+   
+    if os.path.exists(os.environ['HOME'] + "/.ns.cfg"):
+        with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
+            ips = set(json.load(f))
+    else:
+        ips = set()
+
+    ips.add(my_ip)
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
+        json.dump(list(ips), f)
 
 def createServer():
     '''
@@ -174,4 +184,13 @@ if __name__=="__main__":
         sys.settrace(trace_calls)
     else:
         main()
+    
+    try:
+        sys.stdout.close()
+    except:
+        pass
+    try:
+        sys.stderr.close()
+    except:
+        pass
     

@@ -29,12 +29,14 @@ def formatArray(idList):
         if arrId == currRun+1:
             currRun = arrId
         else:
-            if startRun==arrId:
+            if startRun==currRun:
                 listRuns.append("%i" % (startRun+1))
+                startRun = arrId
+                currRun = arrId
             else:
                 listRuns.append("%i-%i" % (startRun+1, arrId+1))
-            startRun = -1
-            currRun = -1
+                startRun = -1
+                currRun = -1
     if startRun==currRun and startRun!=-1:
         listRuns.append("%i" % (startRun+1))
     else:

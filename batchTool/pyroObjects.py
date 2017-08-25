@@ -40,7 +40,7 @@ class JobServer:
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep, limit, True)
+        batch = Monitor2(keep, limit)
         batch.loadBatch(str(jsonFile))
         self.listBatch[name] = {"monitor":batch, "clients":[]}
         
@@ -293,6 +293,8 @@ class DisplayClient(object):
                 elif retCmd.command == DCommands.Back:
                     retCmd.name = self.disconnectBatch()
                 elif retCmd.command == DCommands.Refresh:
+                    retCmd.name = self.batchName
+                elif retCmd.command == DCommands.Resubmit:
                     retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Submit:
                     retCmd.name = self.batchName

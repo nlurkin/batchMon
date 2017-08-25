@@ -18,7 +18,7 @@ def log(*text):
 		mode = "w"
 		first = False
 	with open("xxx",mode) as fd:
-		fd.write("{}\n".format(str(text)))
+		fd.write("{0}\n".format(str(text)))
 
 class MyWindow(object):
 	'''
@@ -92,7 +92,7 @@ class Header(MyWindow):
 		handle.move(1,0)
 		for key,text in self._menuList:
 			handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
-			handle.addstr(" {}: {} ".format(key,text) ,curses.color_pair(1))
+			handle.addstr(" {0}: {1} ".format(key,text) ,curses.color_pair(1))
 		handle.addch(ord('|'),curses.color_pair(1)|curses.A_REVERSE)
 		handle.chgat(curses.color_pair(1))
 		
@@ -107,6 +107,7 @@ class DCommands(object):
 	Refresh    = +100
 	Submit     = +101
 	Switch     = +102
+	Resubmit   = +103
 	
 	def __init__(self, Command, **kwargs):
 		self.command = Command
@@ -157,7 +158,11 @@ class ListWindow(MyWindow):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		
 		self._windowHandles.append(curses.newpad(self._padHeight, self._padWidth))
-	
+
+	def repaintFull(self):
+		log(self.__class__.__name__, sys._getframe().f_code.co_name)
+		self._windowHandles[0].refresh(self._currentWindowPos, 0, self._blockPosition[1], self._blockPosition[0], self._blockPosition[1]+self._displayHeight, self._blockPosition[0]+self._displayWidth)
+
 	def repaint(self):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		self._windowHandles[0].nooutrefresh(self._currentWindowPos, 0, self._blockPosition[1], self._blockPosition[0], self._blockPosition[1]+self._displayHeight, self._blockPosition[0]+self._displayWidth)
@@ -318,7 +323,8 @@ class MainDisplay(MyWindow):
 		header.generate()
 		self._subWindows.append(header)
 
-		jobsList = ListWindow(0, self._blockPosition[1]+5, 150, 30, 150, 100, self._stdscr)
+		maxsize = self._stdscr.getmaxyx()
+		jobsList = ListWindow(0, self._blockPosition[1]+5, maxsize[1], maxsize[0]-6, 150, 100, self._stdscr)
 		jobsList.generate()
 		self._subWindows.append(jobsList)
 	
@@ -389,7 +395,7 @@ class JobDisplay(MyWindow):
 		if key == curses.KEY_LEFT:
 			return DCommands(DCommands.Back)
 		elif curses.unctrl(key) == "^R":
-			return DCommands(DCommands.Refresh)
+			return DCommands(DCommands.Resubmit)
 		elif curses.unctrl(key) == "^G":
 			return DCommands(DCommands.Submit)
 		elif curses.unctrl(key) == "^K":

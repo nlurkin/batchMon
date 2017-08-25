@@ -7,7 +7,17 @@ Created on 27 Sep 2014
 batchClient can connect to a central batchServer instance. It can create new batches, 
 load existing batches and display monitoring informations sent by the server.
 '''
+import curses
+import json
+import os
+import socket
+import sys
+
+import Pyro4
+from batchTool import DisplayClient, display2
 from batchTool.display2 import DCommands
+import select
+
 
 __version__ = '3.0'
 
@@ -17,14 +27,7 @@ except ImportError:
     #Compatibility with older version of python that does not have argpase built-in
     from batchTool.argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-import curses
-import os
-import socket
-import sys
 
-import Pyro4
-from batchTool import DisplayClient, display2
-import select
 
 
 server = None
@@ -72,7 +75,7 @@ def mainLoop():
                 server.disconnectClient(retCmd.name, serveruri)
                 server.stop()
                 break
-            elif retCmd.command==DCommands.Refresh:
+            elif retCmd.command==DCommands.Resubmit:
                 #Reset failed jobs
                 server.resubmitFailed(retCmd.name)
             elif retCmd.command==DCommands.Submit:
@@ -145,18 +148,29 @@ def argParser():
     args = parser.parse_args()
    
     serverFound = False
-    with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
-        for ip in f:
-            print "Trying {0}".format(ip.rstrip())
-            try:
-                nameserver = Pyro4.naming.locateNS(host=ip.rstrip())
-            except Pyro4.errors.PyroError as p:
-                print "Server not found at {0}".format(ip.rstrip())
-            else:
-                serverFound = True
-            if serverFound:
-                break
+    
+    if os.path.exists(os.environ['HOME'] + "/.ns.cfg"):
+        with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
+            ips = set(json.load(f))
+    else:
+        ips = set()
 
+    ips_copy = ips.copy()
+    for ip in ips:
+        print "Trying {0}".format(ip.rstrip())
+        try:
+            nameserver = Pyro4.naming.locateNS(host=ip.rstrip())
+        except Pyro4.errors.PyroError:
+            print "Server not found at {0}".format(ip.rstrip())
+            ips_copy.remove(ip)
+        else:
+            serverFound = True
+        if serverFound:
+            break
+
+    with open(os.environ['HOME'] + "/.ns.cfg", "w") as f:
+        json.dump(list(ips_copy), f)
+        
     if not serverFound:
         print "No server found... Aborting"
         sys.exit(0)

@@ -7,6 +7,7 @@ from . import ConfigBatch
 from util import printDebug
 import re
 from batchTool.lsfMonitor import getLSFMonitorInstance
+import subprocess
 
 class Monitor2:
     '''

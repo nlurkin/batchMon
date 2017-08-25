@@ -3,6 +3,7 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
+import copy
 import json
 import os
 import shutil
@@ -10,7 +11,7 @@ import time
 
 import FSSelector
 import SimpleConfigParser
-from batchTool.util import TwoLayerDict
+from batchTool.util import TwoLayerDict, NoIndex_c
 
 
 class BatchToolExceptions:
@@ -29,12 +30,32 @@ class BatchToolExceptions:
 		def __init__(self, text):
 			self.strerror = text
 
+def stringify(obj):
+	for key,val in obj.iteritems():
+		if type(key) is not str:
+			try:
+				obj[str(key)] = obj[key]
+			except:
+				try:
+					obj[repr(key)] = obj[key]
+				except:
+					pass
+			del obj[key]
+		if type(val) == dict:
+			val = stringify(val)
+			
+	return obj
+
 def encode_dict(obj):
 	'''
 	Encode a dictionary for json 
 	'''
 	if isinstance(obj, BatchJob) or isinstance(obj,finalBatchJob):
 		return obj.__dict__.__str__()
+	if isinstance(obj, TwoLayerDict):
+		return obj.__dict__
+	if isinstance(obj, NoIndex_c):
+		return str(obj)
 	return obj
 
 class BatchJob:
@@ -42,7 +63,7 @@ class BatchJob:
 	Class representing a single job
 	'''
 	
-	def __init__(self, data, index, seq):
+	def __init__(self, data, index):#, seq):
 		if data==None:
 			self.inputFile = []
 			self.index = index
@@ -51,7 +72,7 @@ class BatchJob:
 			self.status = None
 			self.attempts = -2
 			self.script = None
-			self.jobSeq = seq
+			self.jobSeq = index
 		else:
 			self.__dict__ = data
 	
@@ -182,26 +203,40 @@ fileList:
 				raise BatchToolExceptions.BadOption("Unable to test outputs: outputDir or outputFile not specified")
 			self._checkOutputDir()
 			
-		self._readInputList(test)
-	
+		self._readInputList()
+		
+		if test:
+			self._testAndUpdate()
+			
 	def load(self, jsonFile):
 		'''
 		Load a json file for an existing batch
 		'''
 		with open(jsonFile) as f:
-			[self.__dict__,jobsList] = json.load(f)
+			[dd,jobsList, jobcorr] = json.load(f)
+			self.__dict__.update(dd)
 			self.jobsList = []
 			for job in jobsList:
-				jsonstring = job.replace("'", '"').replace("None", 'null')
-				j = BatchJob(json.loads(jsonstring), None, None)
+				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"')
+				j = BatchJob(json.loads(jsonstring), None)
 				self.jobsList.append(j)
+			self.jobCorrespondance = TwoLayerDict()
+			for k1,v1 in jobcorr.iteritems():
+				for k2,v2 in v1.iteritems():
+					if k2 == "NoIndex":
+						self.jobCorrespondance[int(k1)] = int(v2)
+					else:
+						self.jobCorrespondance[(int(k1),int(k2))] = int(v2)
 	
 	def save(self, fileName):
 		'''
 		Save batch in json
 		'''
 		with open(fileName, "wb") as f:
-			json.dump([self.__dict__,self.jobsList], f, default=encode_dict)
+			dic = copy.deepcopy(self.__dict__)
+			del dic["jobsList"]
+			del dic["jobCorrespondance"]
+			json.dump([dic,self.jobsList, stringify(self.jobCorrespondance.dico)], f, default=encode_dict, indent=4, separators=(',', ': '))
 
 	def _buildSearchMap(self, index, fileName):
 		'''
@@ -252,7 +287,6 @@ fileList:
 		
 		#Output file is the outputDir + replaced template file name
 		path = (self.outputDir + "/" + self._readAndReplace(self.outputFile, self._buildSearchMap(index, None))).strip("\n")
-		#print path
 		if FSSelector.exists(path):
 			return False
 		return True
@@ -264,56 +298,41 @@ fileList:
 		if not FSSelector.exists(self.outputDir, True):
 			FSSelector.mkDir(self.outputDir)
 		
-	def _readInputList(self, test):
+	def _readInputList(self):
 		'''
 		Read the input list file and create one job for jobsGroup entry (1 line = 1 entry)
 		'''
 		with open(self.listFile,'r') as f:
-			j = 0
-			group = 0
-			i = 0
-			job = None
-			skip = False
+			group = 0 #keep number of files in job
+			i = 0 #keep file index
+			job = None #job pointer
 			for line in f:
 				self.inputFilesList.append(line.strip('\n'))
 				#If start index specified, skip the first startIndex groups
 				if i>=self.startIndex:
-					#Always create the job if we don't test
-					#Else create only if output file does not exist
-					#print "Test %s exists=%s" % (i,self._testOutputFile(i))
-					if (not test) or (group>0 or self._testOutputFile(i)):
-						if skip:
-							group += 1
-							if group==self.jobsGroup:
-								skip = False
-								group = 0
-								i += 1
-							continue
-						if group==0:
-							job = BatchJob(None, i, j)
-						job.addInputFile(line.strip('\n'))
-						group += 1
-						#print self.jobsGroup
-						if group==self.jobsGroup:
-							self.jobsList.append(job)
-							group = 0
-							j += 1
-							i += 1
-							job = None
-					else:
-						skip = True
-						group += 1
-						if group==self.jobsGroup:
-							skip = False
-							group = 0
-							i += 1
+					#Always create the job, if test is requested and the 
+					#output file already exists, we update it later
+					if group==0:
+						job = BatchJob(None, i)
+					job.addInputFile(line.strip('\n'))
+					group += 1
+					if group==self.jobsGroup:
+						self.jobsList.append(job)
+						group = 0
+						i += 1
+						job = None
 				#If we reach the maximum number of jobs, stop
 				if self.maxJobs>0 and len(self.jobsList)>=self.maxJobs:
 					break
 			if group>0 and job!=None:
 				self.jobsList.append(job)
 		self.jobNumber = len(self.jobsList)
-		
+	
+	def _testAndUpdate(self):
+		for job in self.jobsList:
+			if not self._testOutputFile(job.index):
+				job.status = "DONE"
+			
 	def _readCardFile(self):
 		'''
 		Read the card file and set the options
@@ -437,9 +456,8 @@ fileList:
 		if len(jobsList)>1:
 			for job in jobsList:
 				self._generateJobScriptArrayed(job.index)
-		else:
+		elif len(jobsList)==1:
 			self._generateJobScript(jobsList[0].index)
-		
 
 	def parseFailReason(self, job):
 		'''
