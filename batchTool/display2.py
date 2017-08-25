@@ -254,8 +254,8 @@ class ListWindow(MyWindow):
 		if not self.goCheck(index):
 			return
 		self.goReset()
-		self._currentCursor = index
-		self.setStateChar(self._currentCursor, True)
+		self._currentCursorPos = index
+		self.setStateChar(self._currentCursorPos, True)
 
 	def select(self):
 		''' Select the current element '''
