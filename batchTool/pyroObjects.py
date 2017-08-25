@@ -244,11 +244,13 @@ class DisplayClient(object):
     def deleteBatch(self, index):
         if(index>=len(self.batchList)):
             return None
+        self.lastIndex = index
         return self.batchList[index]['name']
     
     def selectBatch(self, index):
         if(index>=len(self.batchList)):
             return None
+        self.lastIndex = index
         self.batchName = self.batchList[index]['name']
         return self.batchName
     
