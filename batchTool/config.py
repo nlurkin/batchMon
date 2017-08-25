@@ -597,6 +597,8 @@ fileList:
 			if job.attempts==-2 or job.attempts==self.maxAttempts and job.status=="EXIT":
 				job.attempts=-1
 				job.status = None
+				if job.jobID in self.jobCorrespondance:
+					del self.jobCorrespondance[job.jobID]
 	
 	def enableNew(self):
 		'''
