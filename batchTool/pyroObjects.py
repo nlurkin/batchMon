@@ -302,6 +302,7 @@ class DisplayClient(object):
                 elif retCmd.command == DCommands.Back:
                     retCmd.name = self.disconnectBatch()
                 elif retCmd.command == DCommands.Refresh:
+                    self.lastIndex = retCmd.index
                     retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Resubmit:
                     retCmd.name = self.batchName

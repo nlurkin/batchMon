@@ -319,6 +319,8 @@ class ListWindow(MyWindow):
 			return DCommands(DCommands.Select,index=self._currentCursorPos)
 		elif key == curses.KEY_DC:
 			return DCommands(DCommands.Delete, index=self._currentCursorPos)
+		elif curses.unctrl(key) == "r":
+			return DCommands(DCommands.Refresh, index=self._currentCursorPos)
 
 class MainDisplay(MyWindow):
 	def __init__(self, vpos, screen):
@@ -356,10 +358,9 @@ class MainDisplay(MyWindow):
 	def keyPressed(self, key):
 		if curses.unctrl(key) == "K":
 			return DCommands(DCommands.Kill)
-		elif curses.unctrl(key) == "r":
-			return DCommands(DCommands.Refresh)
 		elif curses.unctrl(key) == "C":
 			return DCommands(DCommands.Clean)
+
 		return MyWindow.keyPressed(self, key)
 
 
