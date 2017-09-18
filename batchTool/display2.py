@@ -188,6 +188,8 @@ class ListWindow(MyWindow):
 		i = 0
 		self._windowHandles[0].clear()
 		for el in self._listElements:
+			if i>50:
+				break
 			self._windowHandles[0].addstr(i, 2, "[ ] ")
 			self._windowHandles[0].addnstr(el["name"], self.fieldsSize.nameField)
 			self._windowHandles[0].addstr(i, self.fieldsSize.nameField, "{pending[value]} {running[value]} {failed[value]} {finished}".format(**el["stats"]))
@@ -200,6 +202,8 @@ class ListWindow(MyWindow):
 		''' Reset the display of the cursors '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		for i in range(0,len(self._listElements)):
+			if i>50:
+				break
 			self.setStateChar(i, False)
 	
 	def goCheck(self, index):
