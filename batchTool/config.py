@@ -227,7 +227,7 @@ fileList:
 			self.__dict__.update(dd)
 			self.jobsList = []
 			for job in jobsList:
-				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"')
+				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"').replace("u\"", "\"")
 				j = BatchJob(json.loads(jsonstring), None)
 				self.jobsList.append(j)
 			self.jobCorrespondance = TwoLayerDict()
