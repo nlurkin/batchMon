@@ -134,3 +134,6 @@ class Monitor2:
     def invertKeepOutput(self):
         self.keepOutput = not self.keepOutput
         
+    def isFinished(self):
+        return self.config.getFinishedJobs()==self.config.getJobsNumber()
+        

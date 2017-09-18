@@ -646,6 +646,11 @@ fileList:
 		'''
 		return self.finalizeStage==2 or self.finalizeStage==-2
 
+	def getJobsNumber(self):
+		return self.jobNumber
+	
+	def getFinishedJobs(self):
+		return len([1 for job in self.jobsList if job.status=="DONE"])
 
 if __name__=='__main__':
 	config = ConfigBatch()
