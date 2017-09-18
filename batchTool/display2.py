@@ -104,6 +104,7 @@ class DCommands(object):
 	Back       = -1
 	Delete     = -100
 	Kill       = -101
+	Clean      = -102
 	Refresh    = +100
 	Submit     = +101
 	Switch     = +102
@@ -336,8 +337,9 @@ class MainDisplay(MyWindow):
 		header.addMenuEntry("K", "Kill server")
 		header.addMenuEntry("r", "Refresh list")
 		header.addMenuEntry("RIGHT", "Details of selected job")
-		header.addMenuEntry("UP/DOWN", "Navigate jobs")
+		header.addMenuEntry("UP/DOWN/PGUP/PGDOWN", "Navigate jobs")
 		header.addMenuEntry("DEL", "Remove batch")
+		header.addMenuEntry("C", "Clean finished batch")
 		header.generate()
 		self._subWindows.append(header)
 
@@ -360,6 +362,8 @@ class MainDisplay(MyWindow):
 	def keyPressed(self, key):
 		if curses.unctrl(key) == "K":
 			return DCommands(DCommands.Kill)
+		elif curses.unctrl(key) == "C":
+			return DCommands(DCommands.Clean)
 
 		return MyWindow.keyPressed(self, key)
 
