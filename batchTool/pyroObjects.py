@@ -50,13 +50,15 @@ class JobServer:
         t.setName(name)
         t.daemon = True
         t.start()
-        for name in self.listBatch:
             
     def cleanBatch(self):
         printDebug(3, "Cleaning batches")
+        toRemove = []
         for name,batch in self.listBatch.iteritems():
-            if batch.isFinished():
-                self.removeBatch(name)
+            if batch["monitor"].isFinished():
+                toRemove.append(name)
+        for name in toRemove:
+            self.removeBatch(name)
             
     def doRemove(self, name):
         if name in self.listBatch:
