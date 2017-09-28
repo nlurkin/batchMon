@@ -103,6 +103,14 @@ class BatchJob:
 		if "jobID" in dico:
 			self.jobID = dico["jobID"]
 		if "status" in dico:
+			if dico["status"]=="R":
+				dico["status"] = "RUN"
+			if dico["status"]=="I":
+				dico["status"] = "PEND"
+			if dico["status"]=="H":
+				dico["status"] = "EXIT"
+			if dico["status"]=="C":
+				dico["status"] = "DONE"
 			self.status = dico["status"]
 		if "attempts" in dico:
 			self.attempts = dico["attempts"]
@@ -274,12 +282,12 @@ fileList:
 		Build map to replace all $-parameters
 		'''
 		dico = dict(self._templateDico)
-		dico["jobIndex"] = "$((${LSB_JOBINDEX}-1))"
+		dico["jobIndex"] = "$(($JOBINDEX-1))"
 		if fileName:
 			fileList = ""
 			for i,_ in enumerate(fileName):
-				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}" % (i+1, step)
-				fileList = fileList + ("${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}\n" % (i+1, step))
+				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * ($JOBINDEX-1)))]}" % (i+1, step)
+				fileList = fileList + ("${fileName[$((%i + %i * ($JOBINDEX-1)))]}\n" % (i+1, step))
 			dico["fileList"] = fileList.rstrip("\n")
 			dico["fileName"] = "$fileNameArr[0]"
 		else:
@@ -442,7 +450,7 @@ fileList:
 		return listString
 		
 	def _generateJobScriptArrayed(self, jobIndex):
-		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
+		sReturn = "#File lists array \n%s \nJOBINDEX=$1 \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		sFileList = self._generateBashArray()
 		indexList = range(0,self.jobNumber)
 		
@@ -504,20 +512,21 @@ fileList:
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			if isinstance(jobID[1], NoIndex_c):
-				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
-			else:
-				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(jobID[0]) + "." + str(jobID[1])
+			basePath = "{0}/{1}.{2}".format(self.name, jobID[0], jobID[1])
 			if job.status!=dico["status"]:
-				if dico["status"]=="DONE":
+				if dico["status"]=="C":
 					#clean output
-					if os.path.exists(lsfPath) and not keep:
-						shutil.rmtree(lsfPath, True)
-				if dico["status"]=="EXIT":
+					if os.path.exists("{0}.out".format(basePath)) and not keep:
+						os.remove("{0}.out".format(basePath))
+						os.remove("{0}.err".format(basePath))
+						os.remove("{0}.log".format(basePath))
+				if dico["status"]=="H":
 					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
 						#clean output
-						if os.path.exists(lsfPath) and not keep:
-							shutil.rmtree(lsfPath, True)
+						if os.path.exists("{0}.out".format(basePath)) and not keep:
+							os.remove("{0}.out".format(basePath))
+							os.remove("{0}.err".format(basePath))
+							os.remove("{0}.log".format(basePath))
 						reSubmit = True
 						seq = jobSeq
 						del self.jobCorrespondance[jobID]
@@ -644,6 +653,8 @@ fileList:
 		'''
 		return self.finalizeStage==2 or self.finalizeStage==-2
 
+	def getAllClusterIDs(self):
+		return [job.jobID for job in self.jobsList]
 
 if __name__=='__main__':
 	config = ConfigBatch()

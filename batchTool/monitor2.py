@@ -6,7 +6,8 @@ Created on 16 May 2014
 from . import ConfigBatch
 from util import printDebug
 import re
-from batchTool.lsfMonitor import getLSFMonitorInstance
+#from batchTool.lsfMonitor import getLSFMonitorInstance
+from batchTool.htcondorMonitor import getHTCondorMonitorInstance
 import subprocess
 
 class Monitor2:
@@ -45,7 +46,7 @@ class Monitor2:
     
     def submit(self, jobs):
         printDebug(3, "Monitor submitting jobs")
-        return getLSFMonitorInstance().submitJob(jobs, self.config)
+        return getHTCondorMonitorInstance().submitJob(jobs, self.config)
     
     def generateJobs(self):
         printDebug(3, "Monitor generating jobs")
@@ -80,10 +81,10 @@ class Monitor2:
     def monitorNormal(self):
         self.activeJobs = 0
         for key in self.config.jobCorrespondance.iterLayer1():
-            jobInfo = getLSFMonitorInstance().getInfoByJobID(key)
+            jobInfo = getHTCondorMonitorInstance().getInfoByJobID(key)
             if not jobInfo is None:
                 for jobKey, job in jobInfo.iteritems():
-                    if job.lsfStatus=="RUN" or job.lsfStatus=="PEND":
+                    if job.lsfStatus=="R" or job.lsfStatus=="I":
                         self.activeJobs += 1
                     redo,index = self.config.updateJob((job.lsfID,jobKey), {"status":job.lsfStatus}, self.keepOutput)
                     if redo:
@@ -101,35 +102,35 @@ class Monitor2:
     
     def deleteJobs(self):
         printDebug(3, "Delete jobs " + self.config.name)
-        getLSFMonitorInstance().deleteJobs(self.config.name)
+        getHTCondorMonitorInstance().deleteJobs(self.config.getAllClusterIDs())
         
-    def checkFinalize(self):
-        if self.config.finalizeStage==0:
-            if self.config.finalJob==None:
-                self.config.finalizeStage=2
-                return True
-            
-            cmd = ["bsub -q " + self.config.queue]
-            if self.config.requirement:
-                cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
-            subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
-            (subOutput, _) = subCmd.communicate(self.config.finalJob.script)
-            
-            m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
-            if m:
-                self.config.updateFinalJob({"jobID":m.group(1),"queue":m.group(2)})
-        
-        return self.config.finalizeStage>=0
-    
-    def monitorFinal(self):
-        cmd = ["bjobs -a"]
-        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (monOutput, _) = subCmd.communicate()
-    
-        for line in monOutput.splitlines():
-            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
-            if m:
-                self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
+    #def checkFinalize(self):
+    #    if self.config.finalizeStage==0:
+    #        if self.config.finalJob==None:
+    #            self.config.finalizeStage=2
+    #            return True
+    #        
+    #        cmd = ["bsub -q " + self.config.queue]
+    #        if self.config.requirement:
+    #            cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
+    #        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+    #        (subOutput, _) = subCmd.communicate(self.config.finalJob.script)
+    #        
+    #        m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
+    #        if m:
+    #            self.config.updateFinalJob({"jobID":m.group(1),"queue":m.group(2)})
+    #    
+    #    return self.config.finalizeStage>=0
+    #
+    #def monitorFinal(self):
+    #    cmd = ["bjobs -a"]
+    #    subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    #    (monOutput, _) = subCmd.communicate()
+    #
+    #    for line in monOutput.splitlines():
+    #        m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
+    #        if m:
+    #            self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
         
     def invertKeepOutput(self):
         self.keepOutput = not self.keepOutput
