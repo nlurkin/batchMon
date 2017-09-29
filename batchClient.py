@@ -124,8 +124,8 @@ def argParser():
     global server
     
     parser = ArgumentParser(description=__import__('__main__').__doc__.split("\n")[1], formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument('-q', '--queue', action='store', default="1nh", 
-                    help="Indicates on which LXBATCH queue the jobs will be submitted (default:1nh)")
+    parser.add_argument('-q', '--queue', action='store', default="microcentury", 
+                    help="Indicates on which LXBATCH queue the jobs will be submitted (default:microcentury)")
     parser.add_argument('--limit', action='store', default="-1", 
                     help="Limit on concurrently active (RUN or PEND) jobs (default=-1: no limit).This is not a strict limit as there is a delay between submitting and monitoring.")
     parser.add_argument('-t', '--test', action='store_true', default=False,
