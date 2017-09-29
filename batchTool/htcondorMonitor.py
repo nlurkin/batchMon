@@ -6,6 +6,7 @@ Created on 17 Jan 2017
 import re
 from util import subCommand, TwoLayerDict
 import os
+import stat
 
 htcondorMonitorInstance = None
 
@@ -20,9 +21,9 @@ subFormat = """
 
 executable = {jobName}.sh
 
-output = {jobName}/$(ClusterID).$(jobID).out
-error  = {jobName}/$(ClusterID).$(jobID).err
-log    = {jobName}/$(ClusterID).$(jobID).log
+output = {jobName}/$(ClusterId).$(JobId).out
+error  = {jobName}/$(ClusterId).$(JobId).err
+log    = {jobName}/$(ClusterId).$(JobId).log
 +JobFlavour = "{queue}"
 
 {requirements}
@@ -35,13 +36,13 @@ class HTCondorMonitor(object):
     classdocs
     '''
 
-    #class HTCondorJob(object):
-    #    def __init__(self):
-    #        self.lsfID = None
-    #        self.arrayIndex = None
-    #        self.lsfName = None
-    #        self.lsfStatus = None
-    #    
+    class HTCondorJob(object):
+        def __init__(self):
+            self.lsfID = None
+            self.arrayIndex = None
+            self.lsfName = None
+            self.lsfStatus = None
+        
     #    #def __str__(self):
     #    #    return self.lsfStatus
         
@@ -63,7 +64,8 @@ class HTCondorMonitor(object):
         config.generateScripts(jobs)
         #Create the bsub command
         #config.queue
-        os.mkdir("{jobName}".format(jobName=jobName))
+        if not os.path.exists("{jobName}".format(jobName=jobName)):
+            os.mkdir("{jobName}".format(jobName=jobName))
         with open("{0}.sub".format(jobName), "w") as subFile:
             requirements = ""
             if config.requirement:
@@ -73,7 +75,7 @@ class HTCondorMonitor(object):
 
         with open("{0}.sh".format(jobName), "w") as scriptFile:
             scriptFile.writelines(jobs[0].script)
-        
+        os.chmod("{0}.sh".format(jobName), stat.S_IRWXU | stat.S_IRGRP | stat.IROTH)
         cmd = ["condor_submit -batch-name {0} {0}.sub".format(jobName)]
 
         #Run the command with timeout
@@ -84,7 +86,7 @@ class HTCondorMonitor(object):
             return
         
         #Gather information about the job that was created (id + queue)
-        m = re.search(".* submitted to cluster <([0-9]+)>\.", subOutput)
+        m = re.search(".* submitted to cluster ([0-9]+)\.", subOutput)
         jobID = "";
         if m:
             jobID = int(m.group(1))
@@ -95,7 +97,7 @@ class HTCondorMonitor(object):
                 j.queue = config.queue
                 j.attempts += 1
                 #Update the job with the information
-                config.updateCorrespondance((j.jobID, j.jobSeq+1), j.jobSeq)
+                config.updateCorrespondance((j.jobID, j.jobSeq), j.jobSeq)
                 jobIndex = -1
         else:
             jobs[0].jobID = jobID
@@ -117,9 +119,13 @@ class HTCondorMonitor(object):
         monOutput = subCommand(cmd, None, 10).Run()
         
         for line in monOutput.splitlines():
+            if len(line)==0:
+                continue
             if "Schedd" in line:
                 continue
             if "SUBMITTED" in line:
+                continue
+            if "jobs;" in line:
                 continue
             elements = line.split()
             

@@ -72,10 +72,10 @@ class Monitor2:
     def monitor(self):
         if not self.currentlyChecking:
             self.currentlyChecking = True
-            if not self.checkFinalize():
-                self.monitorNormal()
-            else:
-                self.monitorFinal()
+    #        if not self.checkFinalize():
+            self.monitorNormal()
+    #        else:
+    #            self.monitorFinal()
             self.currentlyChecking = False
     
     def monitorNormal(self):

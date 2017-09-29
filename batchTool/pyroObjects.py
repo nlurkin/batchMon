@@ -11,7 +11,7 @@ import Pyro4
 from . import Monitor2, Display2
 from util import printDebug
 from batchTool.display2 import DCommands, DObject
-from batchTool.lsfMonitor import getLSFMonitorInstance
+from batchTool.htcondorMonitor import getHTCondorMonitorInstance
 
 stopAll = False
 class JobServer:
@@ -132,7 +132,7 @@ class JobServer:
         
     def mainLoop(self):
         #Start monitor function for each batch in its own thread because can be very slow and block the server
-        tMon = threading.Thread(target=getLSFMonitorInstance().refreshInfo)
+        tMon = threading.Thread(target=getHTCondorMonitorInstance().refreshInfo)
         tMon.daemon = True
         tMon.start()
         
