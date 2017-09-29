@@ -282,12 +282,12 @@ fileList:
 		Build map to replace all $-parameters
 		'''
 		dico = dict(self._templateDico)
-		dico["jobIndex"] = "$(($JOBINDEX-1))"
+		dico["jobIndex"] = "$(($JOBINDEX))"
 		if fileName:
 			fileList = ""
 			for i,_ in enumerate(fileName):
-				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * ($JOBINDEX-1)))]}" % (i+1, step)
-				fileList = fileList + ("${fileName[$((%i + %i * ($JOBINDEX-1)))]}\n" % (i+1, step))
+				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * ($JOBINDEX)))]}" % (i+1, step)
+				fileList = fileList + ("${fileName[$((%i + %i * ($JOBINDEX)))]}\n" % (i+1, step))
 			dico["fileList"] = fileList.rstrip("\n")
 			dico["fileName"] = "$fileNameArr[0]"
 		else:
@@ -508,7 +508,7 @@ fileList:
 			if jobArraySeq==None:
 				jobSeq = self.jobCorrespondance[jobID]
 			else:
-				jobSeq = jobArraySeq-1
+				jobSeq = jobArraySeq
 			job = self.jobsList[jobSeq]
 			
 			#test state change
