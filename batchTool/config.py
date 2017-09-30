@@ -769,12 +769,12 @@ class ConfigLSF(ConfigBatch):
 		Build map to replace all $-parameters
 		'''
 		dico = dict(self._templateDico)
-		dico["jobIndex"] = "$(($JOBINDEX))"
+		dico["jobIndex"] = "$((${LSB_JOBINDEX}-1))"
 		if fileName:
 			fileList = ""
 			for i,_ in enumerate(fileName):
-				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * ($JOBINDEX)))]}" % (i+1, step)
-				fileList = fileList + ("${fileName[$((%i + %i * ($JOBINDEX)))]}\n" % (i+1, step))
+				dico["fileNameArr[%s]" % i] = "${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}" % (i+1, step)
+				fileList = fileList + ("${fileName[$((%i + %i * (${LSB_JOBINDEX}-1)))]}\n" % (i+1, step))
 			dico["fileList"] = fileList.rstrip("\n")
 			dico["fileName"] = "$fileNameArr[0]"
 		else:
@@ -785,8 +785,9 @@ class ConfigLSF(ConfigBatch):
 		
 		return dico
 
+
 	def _generateJobScriptArrayed(self, jobIndex):
-		sReturn = "#File lists array \n%s \nJOBINDEX=$1 \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
+		sReturn = "#File lists array \n%s \n#Pre \n%s \n#Command \n%s \n#Post \n%s"
 		sFileList = self._generateBashArray()
 		indexList = range(0,self.jobNumber)
 		
@@ -817,21 +818,20 @@ class ConfigLSF(ConfigBatch):
 			job = self.jobsList[jobSeq]
 			
 			#test state change
-			basePath = "{0}/{1}.{2}".format(self.name, jobID[0], jobID[1])
+			if isinstance(jobID[1], NoIndex_c):
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(job.jobID)
+			else:
+				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(jobID[0]) + "." + str(jobID[1])
 			if job.status!=dico["status"]:
-				if dico["status"]=="C":
+				if dico["status"]=="DONE":
 					#clean output
-					if os.path.exists("{0}.out".format(basePath)) and not keep:
-						os.remove("{0}.out".format(basePath))
-						os.remove("{0}.err".format(basePath))
-						os.remove("{0}.log".format(basePath))
-				if dico["status"]=="H":
+					if os.path.exists(lsfPath) and not keep:
+						shutil.rmtree(lsfPath, True)
+				if dico["status"]=="EXIT":
 					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
 						#clean output
-						if os.path.exists("{0}.out".format(basePath)) and not keep:
-							os.remove("{0}.out".format(basePath))
-							os.remove("{0}.err".format(basePath))
-							os.remove("{0}.log".format(basePath))
+						if os.path.exists(lsfPath) and not keep:
+							shutil.rmtree(lsfPath, True)
 						reSubmit = True
 						seq = jobSeq
 						del self.jobCorrespondance[jobID]
