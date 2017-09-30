@@ -6,9 +6,12 @@ Created on 16 May 2014
 from util import printDebug
 #from batchTool.lsfMonitor import getLSFMonitorInstance
 from HTCondorMonitor import getHTCondorMonitorInstance
+from LSFMonitor import getLSFMonitorInstance
 from batchTool.config import ConfigHTCondor, ConfigLSF
+import subprocess
+import re
 
-class MonitorBase:
+class MonitorBase(object):
     '''
     Main class for monitoring jobs
     '''

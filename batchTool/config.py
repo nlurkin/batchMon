@@ -149,7 +149,7 @@ class finalBatchJob:
 		if "index" in dico:
 			self.jobIndex = dico["index"]
 	
-class ConfigBatch:
+class ConfigBatch(object):
 	_templateDico = {"jobIndex":0, "fileName":"", "outputDir":"", "outputFile":""}
 	
 	_reprTemplate = """
