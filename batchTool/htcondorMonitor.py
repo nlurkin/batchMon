@@ -21,9 +21,10 @@ subFormat = """
 
 executable = {jobName}.sh
 
-output = {jobName}/$(ClusterId).$(JobId).out
-error  = {jobName}/$(ClusterId).$(JobId).err
-log    = {jobName}/$(ClusterId).$(JobId).log
+output = {jobName}/$(ClusterId).$(ProcId).out
+error  = {jobName}/$(ClusterId).$(ProcId).err
+log    = {jobName}/$(ClusterId).$(ProcId).log
+transfer_output_files = ""
 +JobFlavour = "{queue}"
 
 {requirements}
@@ -55,8 +56,8 @@ class HTCondorMonitor(object):
     
     def submitJob(self, jobs, config):
         
+        indexArray = []
         if len(jobs)>1:
-            indexArray = []
             for j in jobs:
                 indexArray.append(str(j.jobSeq))
         jobName = config.name
@@ -74,8 +75,9 @@ class HTCondorMonitor(object):
             subFile.writelines(subFormat.format(jobName=jobName, queue=config.queue, requirements=requirements, indexList=", ".join(indexArray)))
 
         with open("{0}.sh".format(jobName), "w") as scriptFile:
+            scriptFile.write("#!/bin/sh\n")
             scriptFile.writelines(jobs[0].script)
-        os.chmod("{0}.sh".format(jobName), stat.S_IRWXU | stat.S_IRGRP | stat.IROTH)
+        os.chmod("{0}.sh".format(jobName), stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
         cmd = ["condor_submit -batch-name {0} {0}.sub".format(jobName)]
 
         #Run the command with timeout
@@ -92,12 +94,12 @@ class HTCondorMonitor(object):
             jobID = int(m.group(1))
 
         if len(jobs)>1:
-            for j in jobs:
+            for index,j in enumerate(jobs):
                 j.jobID = jobID
                 j.queue = config.queue
                 j.attempts += 1
                 #Update the job with the information
-                config.updateCorrespondance((j.jobID, j.jobSeq), j.jobSeq)
+                config.updateCorrespondance((j.jobID, index), j.jobSeq)
                 jobIndex = -1
         else:
             jobs[0].jobID = jobID
@@ -107,9 +109,11 @@ class HTCondorMonitor(object):
             config.updateCorrespondance(jobs[0].jobID, jobs[0].jobSeq)
             jobIndex = jobs[0].index
         
+        os.remove("{0}.sub".format(jobName))
         return jobID,jobIndex
     
     def deleteJobs(self, clusterID):
+        print clusterID
         for cid in clusterID:
             cmd = ["condor_rm " + cid] #name here is the cluster
             _ = subCommand(cmd, None, 30).Run()
@@ -117,6 +121,8 @@ class HTCondorMonitor(object):
     def refreshInfo(self):
         cmd = ["condor_q -nobatch"]
         monOutput = subCommand(cmd, None, 10).Run()
+        cmd = ["condor_history nlurkin"]
+        monOutput += subCommand(cmd, None, 10).Run()
         
         for line in monOutput.splitlines():
             if len(line)==0:
@@ -128,6 +134,7 @@ class HTCondorMonitor(object):
             if "jobs;" in line:
                 continue
             elements = line.split()
+            print line, elements
             
             job = HTCondorMonitor.HTCondorJob()
             job.lsfStatus = elements[5]

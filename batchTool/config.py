@@ -508,7 +508,7 @@ fileList:
 			if jobArraySeq==None:
 				jobSeq = self.jobCorrespondance[jobID]
 			else:
-				jobSeq = jobArraySeq
+				jobSeq = jobArraySeq-1
 			job = self.jobsList[jobSeq]
 			
 			#test state change
@@ -589,6 +589,10 @@ fileList:
 		
 		if finished==self.jobNumber and (unknown==0 and pending["value"]==0 and running["value"]==0 and failed["value"]==0) and self.finalizeStage==-1:
 			self.finalizeStage = 0
+			if os.path.exists(self.name) and not keep:
+				os.rmdir(self.name)
+			if os.path.exists("{0}.sh".format(self.name)) and not keep:
+				os.remove("{0}.sh".format(self.name))
 			
 		return {"unknown":unknown, "pending":pending, "running":running, "failed":failed, "finished":finished}
 	
