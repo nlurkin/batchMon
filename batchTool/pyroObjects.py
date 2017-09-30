@@ -8,10 +8,11 @@ import threading
 
 import Pyro4
 
-from . import Monitor2, Display2
+from monitor import MonitorHTCondor, MonitorLSF
+from display2 import Display2, DCommands, DObject
 from util import printDebug
-from batchTool.display2 import DCommands, DObject
-from batchTool.htcondorMonitor import getHTCondorMonitorInstance
+from HTCondorMonitor import getHTCondorMonitorInstance
+from LSFMonitor import getLSFMonitorInstance
 
 stopAll = False
 class JobServer:
@@ -26,16 +27,20 @@ class JobServer:
     #==================
     # Called by client
     #==================
-    def addBatch(self, cardFile, name, queue, test, keep, limit):
-        printDebug(3, "Adding new batch %s" % name)
+    def addBatch(self, cardFile, name, queue, test, keep, limit, batchType):
+        printDebug(3, "Adding new batch %s on %s" % (name, batchType))
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
             return
-        batch = Monitor2(keep, limit)
+        if batchType=="lsf":
+            batch = MonitorLSF(keep, limit)
+        elif batchType=="condor":
+            batch = MonitorHTCondor(keep, limit)
         batch.newBatch(cardFile, name, queue, test)
         self.listBatch[name] = {"monitor":batch, "clients":[]}
     
     def loadBatch(self, jsonFile, name, keep, limit):
+        #TODO do the load for various systems
         printDebug(3, "Loading new batch %s from %s" % (name, jsonFile))
         if name in self.listBatch:
             printDebug(2, "Batch %s already exists" % name)
@@ -132,9 +137,13 @@ class JobServer:
         
     def mainLoop(self):
         #Start monitor function for each batch in its own thread because can be very slow and block the server
-        tMon = threading.Thread(target=getHTCondorMonitorInstance().refreshInfo)
-        tMon.daemon = True
-        tMon.start()
+        tMonHTC = threading.Thread(target=getHTCondorMonitorInstance().refreshInfo)
+        tMonHTC.daemon = True
+        tMonHTC.start()
+
+        tMonLSF = threading.Thread(target=getLSFMonitorInstance().refreshInfo)
+        tMonLSF.daemon = True
+        tMonLSF.start()
         
         for name,batch in self.listBatch.items():
             

@@ -134,8 +134,6 @@ def argParser():
                     help="Name of the monitor (used for later recovery, default:config)")
     parser.add_argument('-d', '--debug', action='store_true', default=False, 
                     help="Activate debugging")
-    #parser.add_argument('-x', '--nocurse', action='store_true', 
-    #                help="Disable the curse interface")
     parser.add_argument('-k', '--keep', action='store_true',
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
     parser.add_argument('-s', '--submit', action='store_true',
@@ -143,6 +141,9 @@ def argParser():
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
+    groupNew.add_argument("--system", dest="system", choices=["lsf","condor"], default="lsf", help="Submission system: lsf(default) or condor")
+    groupNew.add_argument("--lsf", dest="system", action="store_const", const="lsf", help="Submit on LSF (default)")
+    groupNew.add_argument("--condor", dest="system", action="store_const", const="condor", help="Submit on HTCondor")
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
@@ -183,7 +184,7 @@ def argParser():
         try:
             if not os.path.isabs(args.config):
                 args.config = os.getcwd()+"/"+args.config
-            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit)
+            server.addBatch(args.config, args.name, args.queue, args.test, args.keep, args.limit, args.system)
         except Exception:
             print "".join(Pyro4.util.getPyroTraceback())
             raise Exception()
@@ -202,9 +203,6 @@ def argParser():
         return 
     
     display2.doLog = args.debug
-    #if args.nocurse:
-    #    mainInit()
-    #else:
     curses.wrapper(mainInit)
 
 if __name__ == "__main__":
