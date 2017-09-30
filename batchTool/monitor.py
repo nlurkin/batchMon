@@ -5,12 +5,10 @@ Created on 16 May 2014
 '''
 from . import ConfigBatch
 from util import printDebug
-import re
 #from batchTool.lsfMonitor import getLSFMonitorInstance
 from batchTool.htcondorMonitor import getHTCondorMonitorInstance
-import subprocess
 
-class Monitor2:
+class MonitorHTCondor:
     '''
     Main class for monitoring jobs
     '''
