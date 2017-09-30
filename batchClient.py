@@ -138,12 +138,12 @@ def argParser():
                     help="Do not delete the LXBATCH output (LSFJOB_xxxxxxx)")
     parser.add_argument('-s', '--submit', action='store_true',
                     help="Submit only and exit")
+    parser.add_argument("--system", dest="system", choices=["lsf","condor"], default="lsf", help="Submission system: lsf(default) or condor")
+    parser.add_argument("--lsf", dest="system", action="store_const", const="lsf", help="Submit on LSF (default)")
+    parser.add_argument("--condor", dest="system", action="store_const", const="condor", help="Submit on HTCondor")
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
-    groupNew.add_argument("--system", dest="system", choices=["lsf","condor"], default="lsf", help="Submission system: lsf(default) or condor")
-    groupNew.add_argument("--lsf", dest="system", action="store_const", const="lsf", help="Submit on LSF (default)")
-    groupNew.add_argument("--condor", dest="system", action="store_const", const="condor", help="Submit on HTCondor")
     groupNew.add_argument("-l", "--load", action="store",
                         help="Reload a previous monitor (restart tracking the jobs, do not regenerate them)")
     args = parser.parse_args()
