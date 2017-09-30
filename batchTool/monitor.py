@@ -3,12 +3,12 @@ Created on 16 May 2014
 
 @author: Nicolas Lurkin
 '''
-from . import ConfigBatch
 from util import printDebug
 #from batchTool.lsfMonitor import getLSFMonitorInstance
-from batchTool.htcondorMonitor import getHTCondorMonitorInstance
+from HTCondorMonitor import getHTCondorMonitorInstance
+from batchTool.config import ConfigHTCondor, ConfigLSF
 
-class MonitorHTCondor:
+class MonitorBase:
     '''
     Main class for monitoring jobs
     '''
@@ -21,30 +21,15 @@ class MonitorHTCondor:
         self.reSubmit = []
         self.keepOutput = keep
         self.jobsLimit = int(limit)
-        self.config = ConfigBatch()
         self.submitReady = False
         self.keepOutput = False
         self.submitting = False
         self.currentlyChecking = False
         self.activeJobs = 0
     
-    def newBatch(self, cfgFile, batchName, queue, test):
-        printDebug(3, "Monitor creating new batch")
-        self.config.initCardFile(cfgFile, batchName, queue, test)
-        self.submitReady = False
-
-    def loadBatch(self, jsonFile):
-        printDebug(3, "Monitor loading new batch")
-        self.config.load(jsonFile)
-        self.submitReady = False
-    
     def saveBatch(self, jsonFile):
         printDebug(3, "Saving batch")
         self.config.save(jsonFile)
-    
-    def submit(self, jobs):
-        printDebug(3, "Monitor submitting jobs")
-        return getHTCondorMonitorInstance().submitJob(jobs, self.config)
     
     def generateJobs(self):
         printDebug(3, "Monitor generating jobs")
@@ -66,6 +51,41 @@ class MonitorHTCondor:
         printDebug(3, "Monitor resubmitting failed jobs")
         self.config.resetFailed()
         self.submitReady = True
+    
+    def submitInit(self):
+        printDebug(3, "Monitor initial submit")
+        self.config.enableNew()
+        self.submitReady = True
+    
+    def invertKeepOutput(self):
+        self.keepOutput = not self.keepOutput
+        
+
+class MonitorHTCondor(MonitorBase):
+    '''
+    Main class for monitoring jobs
+    '''
+
+    def __init__(self, keep, limit):
+        '''
+        Constructor
+        '''
+        super(MonitorHTCondor,self).__init__(keep, limit)
+        self.config = ConfigHTCondor()
+    
+    def newBatch(self, cfgFile, batchName, queue, test):
+        printDebug(3, "Monitor creating new batch")
+        self.config.initCardFile(cfgFile, batchName, queue, test)
+        self.submitReady = False
+
+    def loadBatch(self, jsonFile):
+        printDebug(3, "Monitor loading new batch")
+        self.config.load(jsonFile)
+        self.submitReady = False
+    
+    def submit(self, jobs):
+        printDebug(3, "Monitor submitting jobs")
+        return getHTCondorMonitorInstance().submitJob(jobs, self.config)
     
     def monitor(self):
         if not self.currentlyChecking:
@@ -92,11 +112,6 @@ class MonitorHTCondor:
             self.submitReady = True
             self.submitList.extend(self.reSubmit[:])
             self.reSubmit = []
-    
-    def submitInit(self):
-        printDebug(3, "Monitor initial submit")
-        self.config.enableNew()
-        self.submitReady = True
     
     def deleteJobs(self):
         printDebug(3, "Delete jobs " + self.config.name)
@@ -130,6 +145,86 @@ class MonitorHTCondor:
     #        if m:
     #            self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
         
-    def invertKeepOutput(self):
-        self.keepOutput = not self.keepOutput
+class MonitorLSF(MonitorBase):
+    '''
+    Main class for monitoring jobs
+    '''
+
+    def __init__(self, keep, limit):
+        '''
+        Constructor
+        '''
+        super(MonitorLSF,self).__init__(keep, limit)
+        self.config = ConfigLSF()
+    
+    def newBatch(self, cfgFile, batchName, queue, test):
+        printDebug(3, "Monitor creating new batch")
+        self.config.initCardFile(cfgFile, batchName, queue, test)
+        self.submitReady = False
+
+    def loadBatch(self, jsonFile):
+        printDebug(3, "Monitor loading new batch")
+        self.config.load(jsonFile)
+        self.submitReady = False
+    
+    def submit(self, jobs):
+        printDebug(3, "Monitor submitting jobs")
+        return getLSFMonitorInstance().submitJob(jobs, self.config)
+    
+    def monitor(self):
+        if not self.currentlyChecking:
+            self.currentlyChecking = True
+            if not self.checkFinalize():
+                self.monitorNormal()
+            else:
+                self.monitorFinal()
+            self.currentlyChecking = False
+    
+    def monitorNormal(self):
+        self.activeJobs = 0
+        for key in self.config.jobCorrespondance.iterLayer1():
+            jobInfo = getLSFMonitorInstance().getInfoByJobID(key)
+            if not jobInfo is None:
+                for jobKey, job in jobInfo.iteritems():
+                    if job.lsfStatus=="RUN" or job.lsfStatus=="PEND":
+                        self.activeJobs += 1
+                    redo,index = self.config.updateJob((job.lsfID,jobKey), {"status":job.lsfStatus}, self.keepOutput)
+                    if redo:
+                        self.reSubmit.append(index)
+            
+        if self.submitting == False and len(self.reSubmit)>0:
+            self.submitReady = True
+            self.submitList.extend(self.reSubmit[:])
+            self.reSubmit = []
+    
+    def deleteJobs(self):
+        printDebug(3, "Delete jobs " + self.config.name)
+        getLSFMonitorInstance().deleteJobs(self.config.name)
         
+    def checkFinalize(self):
+        if self.config.finalizeStage==0:
+            if self.config.finalJob==None:
+                self.config.finalizeStage=2
+                return True
+            
+            cmd = ["bsub -q " + self.config.queue]
+            if self.config.requirement:
+                cmd[0] = cmd[0] + " -R \"" + self.config.requirement + "\""
+            subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+            (subOutput, _) = subCmd.communicate(self.config.finalJob.script)
+            
+            m = re.search("Job <([0-9]+)> .*? <(.+?)>.*", subOutput)
+            if m:
+                self.config.updateFinalJob({"jobID":m.group(1),"queue":m.group(2)})
+        
+        return self.config.finalizeStage>=0
+    
+    def monitorFinal(self):
+        cmd = ["bjobs -a"]
+        subCmd = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (monOutput, _) = subCmd.communicate()
+    
+        for line in monOutput.splitlines():
+            m = re.search("([0-9]+) [a-zA-Z]+ (RUN|PEND|DONE|EXIT) .*", line)
+            if m:
+                self.config.updateFinalJob({"jobID":m.group(1), "status":m.group(2)})
