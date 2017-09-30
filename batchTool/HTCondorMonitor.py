@@ -56,6 +56,9 @@ class HTCondorMonitor(object):
     
     def submitJob(self, jobs, config):
         
+        if len(jobs)==0:
+            continue
+
         indexArray = []
         if len(jobs)>1:
             for j in jobs:
@@ -134,7 +137,6 @@ class HTCondorMonitor(object):
             if "jobs;" in line:
                 continue
             elements = line.split()
-            print line, elements
             
             job = HTCondorMonitor.HTCondorJob()
             job.lsfStatus = elements[5]
