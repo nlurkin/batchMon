@@ -70,6 +70,11 @@ def mainLoop():
                 server.removeBatch(retCmd.name)
                 l = server.getBatchList()
                 client.displayBatchList(l)
+            elif retCmd.command==DCommands.Clean:
+                #Clean finished batches
+                server.cleanBatch()
+                l = server.getBatchList()
+                client.displayBatchList(l)
             elif retCmd.command==DCommands.Kill:
                 #Kill the server
                 server.disconnectClient(retCmd.name, serveruri)

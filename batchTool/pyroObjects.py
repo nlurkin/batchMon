@@ -55,7 +55,16 @@ class JobServer:
         t.setName(name)
         t.daemon = True
         t.start()
-        
+            
+    def cleanBatch(self):
+        printDebug(3, "Cleaning batches")
+        toRemove = []
+        for name,batch in self.listBatch.iteritems():
+            if batch["monitor"].isFinished():
+                toRemove.append(name)
+        for name in toRemove:
+            self.removeBatch(name)
+            
     def doRemove(self, name):
         if name in self.listBatch:
             if self.listBatch[name]['monitor'].activeJobs>0:
@@ -253,11 +262,13 @@ class DisplayClient(object):
     def deleteBatch(self, index):
         if(index>=len(self.batchList)):
             return None
+        self.lastIndex = index
         return self.batchList[index]['name']
     
     def selectBatch(self, index):
         if(index>=len(self.batchList)):
             return None
+        self.lastIndex = index
         self.batchName = self.batchList[index]['name']
         return self.batchName
     
@@ -297,9 +308,12 @@ class DisplayClient(object):
                     retCmd.name = self.disconnectBatch()
                 elif retCmd.command == DCommands.Delete:
                     retCmd.name = self.deleteBatch(retCmd.index)
+                elif retCmd.command == DCommands.Clean:
+                    retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Back:
                     retCmd.name = self.disconnectBatch()
                 elif retCmd.command == DCommands.Refresh:
+                    self.lastIndex = retCmd.index
                     retCmd.name = self.batchName
                 elif retCmd.command == DCommands.Resubmit:
                     retCmd.name = self.batchName

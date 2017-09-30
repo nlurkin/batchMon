@@ -104,6 +104,7 @@ class DCommands(object):
 	Back       = -1
 	Delete     = -100
 	Kill       = -101
+	Clean      = -102
 	Refresh    = +100
 	Submit     = +101
 	Switch     = +102
@@ -188,6 +189,8 @@ class ListWindow(MyWindow):
 		i = 0
 		self._windowHandles[0].clear()
 		for el in self._listElements:
+			if i>50:
+				break
 			self._windowHandles[0].addstr(i, 2, "[ ] ")
 			self._windowHandles[0].addnstr(el["name"], self.fieldsSize.nameField)
 			self._windowHandles[0].addstr(i, self.fieldsSize.nameField, "{pending[value]} {running[value]} {failed[value]} {finished}".format(**el["stats"]))
@@ -200,6 +203,8 @@ class ListWindow(MyWindow):
 		''' Reset the display of the cursors '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		for i in range(0,len(self._listElements)):
+			if i>50:
+				break
 			self.setStateChar(i, False)
 	
 	def goCheck(self, index):
@@ -218,9 +223,9 @@ class ListWindow(MyWindow):
 		''' Verify if pad needs scrolling '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		if cursor > (self._currentWindowPos + self._displayHeight):
-			self._currentWindowPos += 1
+			self._currentWindowPos = cursor - self._displayHeight
 		elif cursor < self._currentWindowPos:
-			self._currentWindowPos -= 1
+			self._currentWindowPos = cursor
 
 	def goTop(self):
 		''' Go at the first element '''
@@ -254,8 +259,8 @@ class ListWindow(MyWindow):
 		if not self.goCheck(index):
 			return
 		self.goReset()
-		self._currentCursor = index
-		self.setStateChar(self._currentCursor, True)
+		self._currentCursorPos = index
+		self.setStateChar(self._currentCursorPos, True)
 
 	def select(self):
 		''' Select the current element '''
@@ -302,10 +307,24 @@ class ListWindow(MyWindow):
 			self.goDown()
 		elif key == curses.KEY_UP:
 			self.goUp()
+		elif key == curses.KEY_NPAGE:
+			if self._currentCursorPos+10 > len(self._listElements):
+				index = len(self._listElements)-1
+			else:
+				index = self._currentCursorPos+10
+			self.goTo(index)
+		elif key == curses.KEY_PPAGE:
+			if self._currentCursorPos-10 < 0:
+				index = 0
+			else:
+				index = self._currentCursorPos-10
+			self.goTo(index)
 		elif key == curses.KEY_RIGHT:
 			return DCommands(DCommands.Select,index=self._currentCursorPos)
 		elif key == curses.KEY_DC:
 			return DCommands(DCommands.Delete, index=self._currentCursorPos)
+		elif curses.unctrl(key) == "r":
+			return DCommands(DCommands.Refresh, index=self._currentCursorPos)
 
 class MainDisplay(MyWindow):
 	def __init__(self, vpos, screen):
@@ -318,8 +337,9 @@ class MainDisplay(MyWindow):
 		header.addMenuEntry("K", "Kill server")
 		header.addMenuEntry("r", "Refresh list")
 		header.addMenuEntry("RIGHT", "Details of selected job")
-		header.addMenuEntry("UP/DOWN", "Navigate jobs")
+		header.addMenuEntry("UP/DOWN/PGUP/PGDOWN", "Navigate jobs")
 		header.addMenuEntry("DEL", "Remove batch")
+		header.addMenuEntry("C", "Clean finished batch")
 		header.generate()
 		self._subWindows.append(header)
 
@@ -342,8 +362,8 @@ class MainDisplay(MyWindow):
 	def keyPressed(self, key):
 		if curses.unctrl(key) == "K":
 			return DCommands(DCommands.Kill)
-		elif curses.unctrl(key) == "r":
-			return DCommands(DCommands.Refresh)
+		elif curses.unctrl(key) == "C":
+			return DCommands(DCommands.Clean)
 
 		return MyWindow.keyPressed(self, key)
 

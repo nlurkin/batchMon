@@ -235,7 +235,7 @@ fileList:
 			self.__dict__.update(dd)
 			self.jobsList = []
 			for job in jobsList:
-				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"')
+				jsonstring = job.replace("None", 'null').replace("\"", "\\\"").replace("'", '"').replace("u\"", "\"")
 				j = BatchJob(json.loads(jsonstring), None)
 				self.jobsList.append(j)
 			self.jobCorrespondance = TwoLayerDict()
@@ -609,6 +609,8 @@ fileList:
 			if job.attempts==-2 or job.attempts==self.maxAttempts and job.status=="EXIT":
 				job.attempts=-1
 				job.status = None
+				if job.jobID in self.jobCorrespondance:
+					del self.jobCorrespondance[job.jobID]
 	
 	def enableNew(self):
 		'''
@@ -655,6 +657,12 @@ fileList:
 		Is the final job finished
 		'''
 		return self.finalizeStage==2 or self.finalizeStage==-2
+
+	def getJobsNumber(self):
+		return self.jobNumber
+	
+	def getFinishedJobs(self):
+		return len([1 for job in self.jobsList if job.status=="DONE"])
 
 	def getAllClusterIDs(self):
 		return [job.jobID for job in self.jobsList]
