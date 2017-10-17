@@ -107,7 +107,7 @@ class BatchJob:
 				dico["status"] = "RUN"
 			if dico["status"]=="I":
 				dico["status"] = "PEND"
-			if dico["status"]=="H":
+			if dico["status"]=="X":
 				dico["status"] = "EXIT"
 			if dico["status"]=="C":
 				dico["status"] = "DONE"
@@ -520,7 +520,7 @@ fileList:
 						os.remove("{0}.out".format(basePath))
 						os.remove("{0}.err".format(basePath))
 						os.remove("{0}.log".format(basePath))
-				if dico["status"]=="H":
+				if dico["status"]=="X":
 					if job.attempts>=0 and job.attempts<self.maxAttempts and self.parseFailReason(job):
 						#clean output
 						if os.path.exists("{0}.out".format(basePath)) and not keep:
@@ -586,6 +586,8 @@ fileList:
 					failed["permanent"] += 1
 			elif job.status=="DONE":
 				finished += 1
+			else:
+				unknown += 1
 		
 		if finished==self.jobNumber and (unknown==0 and pending["value"]==0 and running["value"]==0 and failed["value"]==0) and self.finalizeStage==-1:
 			self._finalCleanup()

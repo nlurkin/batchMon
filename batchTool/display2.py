@@ -542,7 +542,10 @@ class SubmitWindow(MyWindow):
 
 	def _addSubmission(self, jobID, jobIndex, currentID):
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
-		progress = ((1.0*currentID+1)/self._submitTotal)*100
+                if self._submitTotal>0:
+                    progress = ((1.0*currentID+1)/self._submitTotal)*100
+                else:
+                    progress = 100
 		
 		x,y = self._submitIndex
 

@@ -74,7 +74,7 @@ class LSFMonitor(object):
     def submitJob(self, jobs, config):
         
         if len(jobs)==0:
-            continue
+            return
         if len(jobs)>1:
             indexArray = []
             for j in jobs:

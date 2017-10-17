@@ -57,12 +57,12 @@ class HTCondorMonitor(object):
     def submitJob(self, jobs, config):
         
         if len(jobs)==0:
-            continue
+            return None,None
 
         indexArray = []
-        if len(jobs)>1:
-            for j in jobs:
-                indexArray.append(str(j.jobSeq))
+        #if len(jobs)>1:
+        for j in jobs:
+            indexArray.append(str(j.jobSeq))
         jobName = config.name
         
         config.generateScripts(jobs)
@@ -88,7 +88,7 @@ class HTCondorMonitor(object):
         
         #If failed, return
         if subOutput==None:
-            return
+            return None,None
         
         #Gather information about the job that was created (id + queue)
         m = re.search(".* submitted to cluster ([0-9]+)\.", subOutput)
@@ -96,21 +96,21 @@ class HTCondorMonitor(object):
         if m:
             jobID = int(m.group(1))
 
-        if len(jobs)>1:
-            for index,j in enumerate(jobs):
-                j.jobID = jobID
-                j.queue = config.queue
-                j.attempts += 1
-                #Update the job with the information
-                config.updateCorrespondance((j.jobID, index), j.jobSeq)
-                jobIndex = -1
-        else:
-            jobs[0].jobID = jobID
-            jobs[0].queue = config.queue
-            jobs[0].attempts += 1
+        #if len(jobs)>1:
+        for index,j in enumerate(jobs):
+            j.jobID = jobID
+            j.queue = config.queue
+            j.attempts += 1
             #Update the job with the information
-            config.updateCorrespondance(jobs[0].jobID, jobs[0].jobSeq)
-            jobIndex = jobs[0].index
+            config.updateCorrespondance((j.jobID, index), j.jobSeq)
+            jobIndex = -1
+        #else:
+        #    jobs[0].jobID = jobID
+        #    jobs[0].queue = config.queue
+        #    jobs[0].attempts += 1
+        #    #Update the job with the information
+        #    config.updateCorrespondance(jobs[0].jobID, jobs[0].jobSeq)
+        #    jobIndex = jobs[0].index
         
         os.remove("{0}.sub".format(jobName))
         return jobID,jobIndex
@@ -137,6 +137,9 @@ class HTCondorMonitor(object):
             if "jobs;" in line:
                 continue
             elements = line.split()
+
+            if len(elements)<6:
+                continue
             
             job = HTCondorMonitor.HTCondorJob()
             job.lsfStatus = elements[5]

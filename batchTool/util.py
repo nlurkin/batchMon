@@ -6,6 +6,7 @@ Created on Jan 27, 2015
 
 import threading
 import subprocess
+import time
 
 #0 = no debug, 1=Error, 2=Warning, 3=Info
 _debugLevel = 0
@@ -104,6 +105,7 @@ class subCommand(threading.Thread):
         self.cmdInput = cmdInput
         self.timeout = timeout
         self.subOutput = None
+        self.p = None
     
     def run(self):
         '''
@@ -117,12 +119,15 @@ class subCommand(threading.Thread):
         Entry point of the class
         '''
         self.start()
+        time.sleep(1)
         self.join(self.timeout)
 
-        if self.is_alive():
+        if self.is_alive() and not self.p is None:
             self.p.terminate()
             self.join()
        
+        if len(self.subError)>0 and not "No job" in self.subError:
+        	print self.subError
         return self.subOutput
 
 
