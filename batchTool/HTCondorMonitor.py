@@ -84,8 +84,9 @@ class HTCondorMonitor(object):
         cmd = ["condor_submit -batch-name {0} {0}.sub".format(jobName)]
 
         #Run the command with timeout
-        subOutput = subCommand(cmd, None, 10).Run()
-        
+        #print "submitting command", cmd
+        subOutput = subCommand(cmd, None, 60).Run()
+        #print "Condor output",subOutput 
         #If failed, return
         if subOutput==None:
             return None,None
