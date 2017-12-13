@@ -632,6 +632,7 @@ fileList:
 		'''
 		Update the final job with the dictionary values
 		'''
+		return
 		if "status" in dico:
 			if dico["jobID"]==self.finalJob.jobID and self.finalJob.status!=dico["status"]:
 				lsfPath = os.path.abspath(os.curdir) + "/LSFJOB_" + str(self.finalJob.jobID)
