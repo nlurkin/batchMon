@@ -52,7 +52,13 @@ class HTCondorMonitor(object):
         Constructor
         '''
         self.jobsList = TwoLayerDict()
+        self.shedulerHost = None
     
+    def setScheduler(self, number):
+        self.shedulerHost = "bigbird{0:0>2}.cern.ch".format(number)
+        os.putenv("_CONDOR_SCHEDD_HOST", self.shedulerHost)
+        os.putenv("_CONDOR_CREDD_HOST", self.shedulerHost)
+        # _CONDOR_SCHEDD_HOST=bigbird04.cern.ch _CONDOR_CREDD_HOST=bigbird04.cern.ch
     
     def submitJob(self, jobs, config):
         

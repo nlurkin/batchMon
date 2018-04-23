@@ -146,6 +146,7 @@ def argParser():
     parser.add_argument("--system", dest="system", choices=["lsf","condor"], default="lsf", help="Submission system: lsf(default) or condor")
     parser.add_argument("--lsf", dest="system", action="store_const", const="lsf", help="Submit on LSF (default)")
     parser.add_argument("--condor", dest="system", action="store_const", const="condor", help="Submit on HTCondor")
+    parser.add_argument("--schedd", dest="schedd", type=int, help="Condor scheduler number")
     groupNew = parser.add_mutually_exclusive_group(required=False)
     groupNew.add_argument("-c", "--config", action="store",
                         help="Configuration file to use (new monitor)")
@@ -182,6 +183,9 @@ def argParser():
         sys.exit(0)
     uri = nameserver.lookup("castor.jobServer")
     server = Pyro4.Proxy(uri)
+    
+    if args.schedd:
+        server.setScheduler(args.schedd)
     
     #Always check if path is absolute or not. Server is waiting for absolute path (or relative to server).
     #Add new batch
