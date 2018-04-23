@@ -125,6 +125,10 @@ class JobServer:
             header['keep'] = self.listBatch[name]["monitor"].keepOutput
             return header
     
+    def setScheduler(self, number):
+        printDebug(3, "Changing scheduler number to %s" % number)
+        getHTCondorMonitorInstance().setScheduler(number)
+    
     def stop(self):
         global stopAll
         printDebug(3, "Stopping server")
