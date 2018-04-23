@@ -223,7 +223,7 @@ class JobServer:
     def kill(self):
         printDebug(3, "Killing server properly")
         self.disconnectAllClients()
-        self.saveAllBatches()
+        #self.saveAllBatches()
         
 
 class DisplayClient(object):
