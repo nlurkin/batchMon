@@ -189,7 +189,7 @@ class ListWindow(MyWindow):
 		i = 0
 		self._windowHandles[0].clear()
 		for el in self._listElements:
-			if i>50:
+			if i>self._padHeight-2:
 				break
 			self._windowHandles[0].addstr(i, 2, "[ ] ")
 			self._windowHandles[0].addnstr(el["name"], self.fieldsSize.nameField)
@@ -203,7 +203,7 @@ class ListWindow(MyWindow):
 		''' Reset the display of the cursors '''
 		log(self.__class__.__name__, sys._getframe().f_code.co_name)
 		for i in range(0,len(self._listElements)):
-			if i>50:
+			if i>self._padHeight-2:
 				break
 			self.setStateChar(i, False)
 	
@@ -344,7 +344,7 @@ class MainDisplay(MyWindow):
 		self._subWindows.append(header)
 
 		maxsize = self._stdscr.getmaxyx()
-		jobsList = ListWindow(0, self._blockPosition[1]+5, maxsize[1], maxsize[0]-6, 150, 100, self._stdscr)
+		jobsList = ListWindow(0, self._blockPosition[1]+5, maxsize[1], maxsize[0]-6, 150, 200, self._stdscr)
 		jobsList.generate()
 		self._subWindows.append(jobsList)
 	
