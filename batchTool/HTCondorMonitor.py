@@ -134,6 +134,7 @@ class HTCondorMonitor(object):
         #cmd = ["condor_history nlurkin"]
         #monOutput += subCommand(cmd, None, 10).Run()
         
+        oldDict = set(self.jobsList.iterkeys())
         for line in monOutput.splitlines():
             if len(line)==0:
                 continue
@@ -155,6 +156,12 @@ class HTCondorMonitor(object):
             job.lsfName = "" #TODO to find out how to get that
             self.jobsList[job.lsfID,job.arrayIndex] = job
             
+            if (job.lsfID,job.arrayIndex) in oldDict:
+                oldDict.remove((job.lsfID,job.arrayIndex))
+            
+        for jobIndex in oldDict:
+            self.jobsList[jobIndex].lsfStatus = "C"
+
     def getInfoByJobID(self, jobID, jobIndex=None):
         if jobIndex is None:
             return self.jobsList[jobID]
