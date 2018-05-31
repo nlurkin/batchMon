@@ -100,28 +100,32 @@ class MonitorHTCondor(MonitorBase):
     #        else:
     #            self.monitorFinal()
             self.currentlyChecking = False
-    
+
     def monitorNormal(self):
         self.activeJobs = 0
-        for key in self.config.jobCorrespondance.iterLayer1():
-            jobInfo = getHTCondorMonitorInstance().getInfoByJobID(key)
+        for key,jobID in self.config.jobCorrespondance.iterkeys():
+            jobInfo = getHTCondorMonitorInstance().getInfoByJobID(key, jobID)
             if not jobInfo is None:
-                for jobKey, job in jobInfo.iteritems():
-                    if job.lsfStatus=="R" or job.lsfStatus=="I":
-                        self.activeJobs += 1
-                    redo,index = self.config.updateJob((job.lsfID,jobKey), {"status":job.lsfStatus}, self.keepOutput)
-                    if redo:
-                        self.reSubmit.append(index)
-            
+                if job.lsfStatus=="R" or job.lsfStatus=="I":
+                    self.activeJobs += 1
+                redo,index = self.config.updateJob((job.lsfID,jobID), {"status":job.lsfStatus}, self.keepOutput)
+                if redo:
+                    self.reSubmit.append(index)
+            elif self.config.getJobStatus((key, jobID))=="R":
+                redo,index = self.config.updateJob((key,jobID), {"status":"C"}, self.keepOutput)
+                if redo:
+                    self.reSubmit.append(index)
+
+
         if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
             self.submitList.extend(self.reSubmit[:])
             self.reSubmit = []
-    
+
     def deleteJobs(self):
         printDebug(3, "Delete jobs " + self.config.name)
         getHTCondorMonitorInstance().deleteJobs(self.config.getAllClusterIDs())
-        
+
     #def checkFinalize(self):
     #    if self.config.finalizeStage==0:
     #        if self.config.finalJob==None:

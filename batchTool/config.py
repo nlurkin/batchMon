@@ -494,7 +494,15 @@ fileList:
 		#if false
 		#job["attempts"] = -2
 		return True
-	
+
+        def getJobStatus(self, jobID):
+		if jobID in self.jobCorrespondance:
+			#Get the job index and the job itself
+			jobSeq = self.jobCorrespondance[jobID]
+			job = self.jobsList[jobSeq]
+		        return job.status
+		return "U"
+
 	def updateJob(self, jobID, dico, keep, jobArraySeq=None):
 		'''
 		Update job with the information in the dico
