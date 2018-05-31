@@ -10,7 +10,7 @@ dataConfig: &dataConfig
   optTemplate: $outputFile $jobIndex $fileName
 
   preExecute: |
-    source ~/env32.sh
+    #source ~/env32.sh
     echo "$fileList"
     echo $fileNameArr[1]
 
@@ -18,3 +18,4 @@ dataConfig: &dataConfig
     ls
     pwd
     echo "mv $outputFile $outputDir/$outputFile"
+    sleep 20

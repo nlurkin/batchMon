@@ -103,20 +103,16 @@ class MonitorHTCondor(MonitorBase):
 
     def monitorNormal(self):
         self.activeJobs = 0
-        for key,jobID in self.config.jobCorrespondance.iterkeys():
-            jobInfo = getHTCondorMonitorInstance().getInfoByJobID(key, jobID)
+        for key in self.config.jobCorrespondance.iterLayer1():
+            jobInfo = getHTCondorMonitorInstance().getInfoByJobID(key)
             if not jobInfo is None:
-                if job.lsfStatus=="R" or job.lsfStatus=="I":
-                    self.activeJobs += 1
-                redo,index = self.config.updateJob((job.lsfID,jobID), {"status":job.lsfStatus}, self.keepOutput)
-                if redo:
-                    self.reSubmit.append(index)
-            elif self.config.getJobStatus((key, jobID))=="R":
-                redo,index = self.config.updateJob((key,jobID), {"status":"C"}, self.keepOutput)
-                if redo:
-                    self.reSubmit.append(index)
-
-
+                for jobKey, job in jobInfo.iteritems():
+                    if job.lsfStatus=="R" or job.lsfStatus=="I":
+                        self.activeJobs += 1
+                    redo,index = self.config.updateJob((job.lsfID,jobKey), {"status":job.lsfStatus}, self.keepOutput)
+                    if redo:
+                        self.reSubmit.append(index)
+            
         if self.submitting == False and len(self.reSubmit)>0:
             self.submitReady = True
             self.submitList.extend(self.reSubmit[:])
