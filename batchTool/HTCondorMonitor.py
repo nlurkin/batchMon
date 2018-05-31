@@ -131,8 +131,8 @@ class HTCondorMonitor(object):
     def refreshInfo(self):
         cmd = ["condor_q -nobatch"]
         monOutput = subCommand(cmd, None, 10).Run()
-        cmd = ["condor_history nlurkin"]
-        monOutput += subCommand(cmd, None, 10).Run()
+        #cmd = ["condor_history nlurkin"]
+        #monOutput += subCommand(cmd, None, 10).Run()
         
         for line in monOutput.splitlines():
             if len(line)==0:
