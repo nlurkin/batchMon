@@ -767,8 +767,8 @@ class ConfigHTCondor(ConfigBatch):
 				os.rmdir(self.name)
 			except:
 				pass
-		if os.path.exists("{0}.sh".format(self.name)):
-			os.remove("{0}.sh".format(self.name))
+		#if os.path.exists("{0}.sh".format(self.name)):
+		#	os.remove("{0}.sh".format(self.name))
 
 class ConfigLSF(ConfigBatch):
 	

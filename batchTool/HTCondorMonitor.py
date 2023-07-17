@@ -133,8 +133,11 @@ class HTCondorMonitor(object):
         monOutput = subCommand(cmd, None, 10).Run()
         #cmd = ["condor_history nlurkin"]
         #monOutput += subCommand(cmd, None, 10).Run()
-        
-        oldDict = set(self.jobsList.iterkeys())
+       
+        #print "Full list", self.jobsList
+        oldDict = set([(k1,k2) for k1,k2,v in self.jobsList.iteritems() if v.lsfStatus!="C"])
+        oldSize = len(oldDict)
+        #print "Before", oldDict
         for line in monOutput.splitlines():
             if len(line)==0:
                 continue
@@ -158,9 +161,13 @@ class HTCondorMonitor(object):
             
             if (job.lsfID,job.arrayIndex) in oldDict:
                 oldDict.remove((job.lsfID,job.arrayIndex))
-            
-        for jobIndex in oldDict:
-            self.jobsList[jobIndex].lsfStatus = "C"
+        
+        #print "After", oldDict
+        if len(oldDict)==1 or len(oldDict)!=oldSize:
+            #print "Job are being removed"
+            for jobIndex in oldDict:
+                #print "Removing ", jobIndex
+                self.jobsList[jobIndex].lsfStatus = "C"
 
     def getInfoByJobID(self, jobID, jobIndex=None):
         if jobIndex is None:

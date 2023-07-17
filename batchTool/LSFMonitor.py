@@ -162,11 +162,5 @@ class LSFMonitor(object):
 if __name__=="__main__":
     mon = LSFMonitor()
     mon.refreshInfo()
-    print str(mon)
-    
-    print mon.getInfoByJobID(33333, 0)
-    print mon.getInfoByJobID(3914)
-    
-    
     
     

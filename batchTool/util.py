@@ -37,7 +37,7 @@ class TwoLayerDict(object):
     def iteritems(self):
         fullList = []
         for k1,v1 in self.dico.iteritems():
-            for k2,v2 in v1:
+            for k2,v2 in v1.iteritems():
                 fullList.append((k1,k2,v2))
         return fullList 
     

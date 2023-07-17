@@ -55,6 +55,7 @@ def trace_calls(frame, event, arg):
 
 def mainLoop():
     global nsDaemon, broadCastServer, pyroDaemon, bServer
+    cycle = 0
     while True:
         try:
             # create sets of the socket objects we will be waiting on
@@ -74,12 +75,15 @@ def mainLoop():
                     eventsForNameserver.append(s)
                 elif s in pyroSockets:
                     eventsForDaemon.append(s)
-                
+
                 if eventsForNameserver:
                     nsDaemon.events(eventsForNameserver)
                 if eventsForDaemon:
                     pyroDaemon.events(eventsForDaemon)
+            #if cycle>=20:
             bServer.mainLoop()
+            #    cycle = -1
+            #cycle += 1
             if pyroObjects.stopAll:
                 bServer.kill()
                 break
@@ -96,8 +100,8 @@ def mainLoop():
             printDebug(1, ("Unexpected error:", e.__doc__))
             print e.message
             bServer.kill()
-                
-    
+
+
     nsDaemon.close()
     broadCastServer.close()
     pyroDaemon.close()
@@ -108,7 +112,7 @@ def setNS():
     Starting namespace server
     '''
     global nsDaemon, broadCastServer
-    
+
     my_ip = Pyro4.socketutil.getIpAddress(None, workaround127=True)
     nameserverUri, nsDaemon, broadCastServer = Pyro4.naming.startNS(host=my_ip)
     assert broadCastServer is not None, "expect a broadcast server to be created"
@@ -116,7 +120,7 @@ def setNS():
     print("ns daemon location string=%s" % nsDaemon.locationStr)
     print("ns daemon sockets=%s" % nsDaemon.sockets)
     print("bc server socket=%s (fileno %d)" % (broadCastServer.sock, broadCastServer.fileno()))
-   
+
     if os.path.exists(os.environ['HOME'] + "/.ns.cfg"):
         with open(os.environ['HOME'] + "/.ns.cfg", "r") as f:
             ips = set(json.load(f))
@@ -138,22 +142,22 @@ def createServer():
     print("daemon sockets=%s" % pyroDaemon.sockets)
 
     bServer = JobServer()
-    
+
     # register a server object with the daemon
     serveruri = pyroDaemon.register(bServer)
     print("server uri=%s" % serveruri)
-    
+
     return serveruri
 
 def registerServer(serveruri):
-    global nsDaemon 
+    global nsDaemon
     nsDaemon.nameserver.register("castor.jobServer", serveruri)
-        
+
 def main():
     setNS()
     serveruri = createServer()
     registerServer(serveruri)
-    
+
     mainLoop()
 
 def tryint(val):
@@ -168,7 +172,7 @@ def printUsage():
     print "\t -d\033[4mn\033[0m:  Print debugging information according to the debug level \033[4mn\033[0m: 0=No debug, 1=Error, 2=Warning, 3=Info"
     print "\t -t: Activate tracing"
     print "\t -h: Print this help"
-    
+
 if __name__=="__main__":
     useTrace = False
     if len(sys.argv)>1:
@@ -184,7 +188,7 @@ if __name__=="__main__":
         sys.settrace(trace_calls)
     else:
         main()
-    
+
     try:
         sys.stdout.close()
     except:
@@ -193,4 +197,4 @@ if __name__=="__main__":
         sys.stderr.close()
     except:
         pass
-    
+

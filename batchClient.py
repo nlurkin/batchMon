@@ -14,6 +14,7 @@ import socket
 import sys
 
 import Pyro4
+import Pyro4.naming
 from batchTool import DisplayClient, display2
 from batchTool.display2 import DCommands
 import select
@@ -169,7 +170,7 @@ def argParser():
             nameserver = Pyro4.naming.locateNS(host=ip.rstrip())
         except Pyro4.errors.PyroError:
             print "Server not found at {0}".format(ip.rstrip())
-            ips_copy.remove(ip)
+            #ips_copy.remove(ip)
         else:
             serverFound = True
         if serverFound:
@@ -186,6 +187,7 @@ def argParser():
     
     if args.schedd:
         server.setScheduler(args.schedd)
+        sys.exit(0)
     
     #Always check if path is absolute or not. Server is waiting for absolute path (or relative to server).
     #Add new batch
